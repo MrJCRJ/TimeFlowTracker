@@ -74,11 +74,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       userPreferences.activeTimer = activeTimer;
     }
 
-    const result = await driveService.syncAll(
-      categories || [],
-      timeEntries || [],
-      userPreferences
-    );
+    const result = await driveService.syncAll(categories || [], timeEntries || [], userPreferences);
 
     return NextResponse.json({
       success: true,

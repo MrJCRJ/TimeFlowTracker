@@ -7,6 +7,7 @@ Este projeto está configurado para deploy no Vercel. Siga os passos abaixo para
 ## 📋 Pré-requisitos
 
 ### 1. Conta Google Cloud Console
+
 1. Acesse [Google Cloud Console](https://console.cloud.google.com/)
 2. Crie um novo projeto ou selecione um existente
 3. Ative a Google Drive API
@@ -27,6 +28,7 @@ NEXTAUTH_URL=https://your-domain.vercel.app
 ```
 
 #### Como gerar o NEXTAUTH_SECRET:
+
 ```bash
 openssl rand -base64 32
 ```
@@ -34,6 +36,7 @@ openssl rand -base64 32
 ## 🔧 Configuração do Build
 
 O projeto já está configurado com:
+
 - ✅ Next.js 14.2.21
 - ✅ TypeScript
 - ✅ Tailwind CSS
@@ -54,16 +57,19 @@ O projeto já está configurado com:
 ## 🚨 Solução de Problemas
 
 ### Erro: "Missing required environment variables"
+
 - ✅ Verifique se todas as variáveis foram adicionadas no Vercel
 - ✅ Certifique-se de que não há espaços extras
 - ✅ Re-deploy após adicionar as variáveis
 
 ### Erro: "Build failed"
+
 - ✅ Execute `npm run build` localmente primeiro
 - ✅ Verifique se todas as dependências estão instaladas
 - ✅ Certifique-se de que o Node.js version no Vercel é 18+
 
 ### Autenticação não funciona
+
 - ✅ Verifique se o `NEXTAUTH_URL` está correto
 - ✅ Certifique-se de que as credenciais Google estão válidas
 - ✅ Verifique os logs do Vercel para erros específicos
@@ -71,6 +77,7 @@ O projeto já está configurado com:
 ## 📊 Monitoramento
 
 Após o deploy, monitore:
+
 - **Runtime Logs**: Para erros em produção
 - **Analytics**: Para uso da aplicação
 - **Performance**: Para otimização

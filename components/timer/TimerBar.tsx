@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useEffect, useCallback } from 'react';
+import { SyncIndicator } from '@/components/ui/SyncIndicator';
+import { LoadingState } from '@/components/ui/loading-state';
 import { cn, formatTime } from '@/lib/utils';
 import { useTimerStore } from '@/stores/timerStore';
 import { useCategoryStore } from '@/stores/categoryStore';
@@ -47,6 +49,9 @@ interface TimerBarProps {
   className?: string;
   store?: TimerStoreState; // Para testes - sobrescreve o hook
   categories?: Category[]; // Opcional para testes
+  isSyncing?: boolean; // Indica se está sincronizando
+  onSyncClick?: () => void; // Callback para sincronização manual
+  isLoading?: boolean; // Indica se está carregando dados iniciais
 }
 
 /**
@@ -58,7 +63,15 @@ interface TimerBarProps {
  * - Mostra tempo decorrido em tempo real
  * - Permite parar timer ativo
  */
-export function TimerBar({ userId, className, store, categories: propCategories }: TimerBarProps) {
+export function TimerBar({
+  userId,
+  className,
+  store,
+  categories: propCategories,
+  isSyncing = false,
+  onSyncClick,
+  isLoading = false,
+}: TimerBarProps) {
   // Sempre chama o hook, mas pode sobrescrever com props
   const timerStoreFromHook = useTimerStore();
   const { categories: storeCategories, initializeDefaults } = useCategoryStore();
@@ -114,6 +127,20 @@ export function TimerBar({ userId, className, store, categories: propCategories 
     const Icon = iconMap[iconName] || Folder;
     return <Icon className="h-4 w-4" style={{ color }} />;
   };
+
+  // Se está carregando dados iniciais
+  if (isLoading) {
+    return (
+      <div
+        data-testid="timer-bar"
+        role="region"
+        aria-label="Barra de timer"
+        className={cn('timer-bar flex items-center justify-center p-4', className)}
+      >
+        <LoadingState type="timer" />
+      </div>
+    );
+  }
 
   // Se não há categorias
   if (categories.length === 0) {
@@ -211,6 +238,13 @@ export function TimerBar({ userId, className, store, categories: propCategories 
                 <Play className="h-5 w-5" />
               </div>
             )}
+
+            {/* Indicador de sincronização */}
+            <SyncIndicator
+              lastSync={null} // TODO: conectar com hook de sync
+              isSyncing={isSyncing}
+              isOnline={true} // TODO: detectar status online
+            />
           </div>
         </div>
       </div>

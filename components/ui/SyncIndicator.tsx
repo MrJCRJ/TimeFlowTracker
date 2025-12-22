@@ -43,6 +43,14 @@ export function SyncIndicator({ lastSync, isSyncing, isOnline, className }: Sync
 
   return (
     <div
+      role="status"
+      aria-label={
+        isSyncing
+          ? 'Sincronizando dados...'
+          : lastSync
+            ? `Última sincronização: ${timeAgo}`
+            : 'Nunca sincronizado'
+      }
       className={cn(
         'flex items-center gap-1.5 text-xs',
         isOnline ? 'text-muted-foreground' : 'text-destructive',

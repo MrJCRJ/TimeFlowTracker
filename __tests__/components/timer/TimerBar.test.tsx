@@ -330,4 +330,26 @@ describe('TimerBar', () => {
       expect(screen.getByText(/nenhuma categoria disponível/i)).toBeInTheDocument();
     });
   });
+
+  describe('Estados de loading', () => {
+    it('deve mostrar LoadingState quando está carregando', () => {
+      render(<TimerBar categories={[]} userId="user-1" store={mockStore} isLoading={true} />);
+
+      // Verifica se o LoadingState está sendo renderizado
+      expect(screen.getByTestId('timer-bar')).toBeInTheDocument();
+
+      // Verifica se não mostra a mensagem de "nenhuma categoria"
+      expect(screen.queryByText(/nenhuma categoria disponível/i)).not.toBeInTheDocument();
+    });
+
+    it('deve mostrar categorias quando não está carregando', () => {
+      render(
+        <TimerBar categories={mockCategories} userId="user-1" store={mockStore} isLoading={false} />
+      );
+
+      // Verifica se as categorias são mostradas
+      expect(screen.getByText('Trabalho')).toBeInTheDocument();
+      expect(screen.getByText('Estudo')).toBeInTheDocument();
+    });
+  });
 });

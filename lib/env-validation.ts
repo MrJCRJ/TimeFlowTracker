@@ -15,7 +15,9 @@ export function validateEnvironment() {
 
     // Em produção, não falhar o build, apenas registrar o aviso
     if (process.env.NODE_ENV === 'production') {
-      console.warn('🚀 Build will continue, but authentication features may not work without proper environment variables');
+      console.warn(
+        '🚀 Build will continue, but authentication features may not work without proper environment variables'
+      );
       return;
     }
 
