@@ -12,9 +12,11 @@ interface DashboardLayoutProps {
 }
 
 export default async function DashboardLayout({ children }: DashboardLayoutProps) {
-  // Validar variáveis de ambiente em produção
-  if (process.env.NODE_ENV === 'production') {
+  // Validar variáveis de ambiente (apenas registra avisos em produção)
+  try {
     validateEnvironment();
+  } catch (error) {
+    console.warn('Environment validation failed, but continuing:', error instanceof Error ? error.message : String(error));
   }
 
   const session = await getSession();

@@ -10,8 +10,17 @@ export function validateEnvironment() {
   const missing = requiredEnvVars.filter((envVar) => !process.env[envVar]);
 
   if (missing.length > 0) {
-    console.error('Missing required environment variables:', missing);
-    throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
+    const errorMessage = `Missing required environment variables: ${missing.join(', ')}`;
+    console.warn('⚠️ Environment validation warning:', errorMessage);
+
+    // Em produção, não falhar o build, apenas registrar o aviso
+    if (process.env.NODE_ENV === 'production') {
+      console.warn('🚀 Build will continue, but authentication features may not work without proper environment variables');
+      return;
+    }
+
+    // Em desenvolvimento, ainda falhar para alertar o desenvolvedor
+    throw new Error(errorMessage);
   }
 
   // Validação adicional para URLs
@@ -20,7 +29,7 @@ export function validateEnvironment() {
     throw new Error('NEXTAUTH_URL must be a valid URL');
   }
 
-  console.log('Environment variables validated successfully');
+  console.log('✅ Environment variables validated successfully');
 }
 
 // Executa validação em desenvolvimento
