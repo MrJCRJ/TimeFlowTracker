@@ -6,6 +6,7 @@ import { TimerBar } from '@/components/timer/TimerBar';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
 import { TimerNotifications } from '@/components/notifications/TimerNotifications';
+import { TimerSync } from '@/components/timer/TimerSync';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -45,6 +46,9 @@ export default async function DashboardLayout({ children }: DashboardLayoutProps
 
         {/* Timer Notifications */}
         <TimerNotifications />
+
+        {/* Timer Sync (auto-sync e persistência) */}
+        <TimerSync />
       </div>
     </Providers>
   );

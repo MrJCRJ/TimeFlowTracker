@@ -38,15 +38,16 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
     }
 
     const body = await request.json();
-    const { categories, timeEntries, preferences } = body;
+    const { categories, timeEntries, preferences, activeTimer, syncedAt } = body;
 
-    if (!categories || !timeEntries || !preferences) {
+    // Permitir backup parcial (para sendBeacon)
+    if (!categories && !timeEntries) {
       return NextResponse.json(
         {
           success: false,
           error: {
             code: 'VALIDATION_ERROR',
-            message: 'Dados incompletos para backup',
+            message: 'Nenhum dado para backup',
           },
           timestamp: new Date().toISOString(),
         },
@@ -55,7 +56,29 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
     }
 
     const driveService = createDriveService(accessToken);
-    const result = await driveService.syncAll(categories, timeEntries, preferences);
+
+    // Criar objeto de preferências padrão se não fornecido
+    const userPreferences = preferences || {
+      userId: session.user.id,
+      workHours: { start: '09:00', end: '18:00' },
+      dailyGoals: {},
+      theme: 'system',
+      notifications: true,
+      autoSync: true,
+      syncInterval: 5,
+      updatedAt: syncedAt || new Date().toISOString(),
+    };
+
+    // Incluir timer ativo nas preferências se existir
+    if (activeTimer) {
+      userPreferences.activeTimer = activeTimer;
+    }
+
+    const result = await driveService.syncAll(
+      categories || [],
+      timeEntries || [],
+      userPreferences
+    );
 
     return NextResponse.json({
       success: true,

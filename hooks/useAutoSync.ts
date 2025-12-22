@@ -1,0 +1,173 @@
+'use client';
+
+import { useEffect, useCallback, useRef } from 'react';
+import { useSession } from 'next-auth/react';
+import { useTimerStore } from '@/stores/timerStore';
+import { useCategoryStore } from '@/stores/categoryStore';
+import { useNotificationStore } from '@/stores/notificationStore';
+
+interface SyncConfig {
+  autoSync: boolean;
+  syncInterval: number; // em minutos
+}
+
+const DEFAULT_CONFIG: SyncConfig = {
+  autoSync: true,
+  syncInterval: 5, // 5 minutos
+};
+
+export function useAutoSync(config: Partial<SyncConfig> = {}) {
+  const { autoSync, syncInterval } = { ...DEFAULT_CONFIG, ...config };
+  const { data: session } = useSession();
+  const { addNotification } = useNotificationStore();
+
+  const { timeEntries, activeEntry, isRunning, setTimeEntries } = useTimerStore();
+  const { categories, setCategories } = useCategoryStore();
+
+  const lastSyncRef = useRef<Date | null>(null);
+  const isSyncingRef = useRef(false);
+
+  // Função para fazer backup no Google Drive
+  const syncToCloud = useCallback(async () => {
+    if (!session?.accessToken || isSyncingRef.current) return false;
+
+    isSyncingRef.current = true;
+
+    try {
+      const response = await fetch('/api/drive/backup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          categories,
+          timeEntries,
+          activeTimer: isRunning ? activeEntry : null,
+          syncedAt: new Date().toISOString(),
+        }),
+      });
+
+      if (response.ok) {
+        lastSyncRef.current = new Date();
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.error('Erro ao sincronizar:', error);
+      return false;
+    } finally {
+      isSyncingRef.current = false;
+    }
+  }, [session, categories, timeEntries, activeEntry, isRunning]);
+
+  // Função para carregar do Google Drive
+  const syncFromCloud = useCallback(async () => {
+    if (!session?.accessToken || isSyncingRef.current) return false;
+
+    isSyncingRef.current = true;
+
+    try {
+      const response = await fetch('/api/drive/sync');
+
+      if (!response.ok) {
+        return false;
+      }
+
+      const data = await response.json();
+
+      if (data.success && data.data) {
+        // Atualizar dados locais com dados da nuvem
+        if (data.data.categories) {
+          setCategories(data.data.categories);
+        }
+        if (data.data.timeEntries) {
+          setTimeEntries(data.data.timeEntries);
+        }
+
+        lastSyncRef.current = new Date();
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.error('Erro ao carregar dados da nuvem:', error);
+      return false;
+    } finally {
+      isSyncingRef.current = false;
+    }
+  }, [session, setCategories, setTimeEntries]);
+
+  // Sincronização automática periódica
+  useEffect(() => {
+    if (!autoSync || !session?.accessToken) return;
+
+    const intervalMs = syncInterval * 60 * 1000;
+
+    const syncTimer = setInterval(async () => {
+      const success = await syncToCloud();
+      if (success) {
+        console.log('Auto-sync realizado com sucesso');
+      }
+    }, intervalMs);
+
+    // Sincronização inicial ao carregar
+    syncFromCloud().then((success) => {
+      if (success) {
+        addNotification({
+          type: 'info',
+          title: 'Dados Sincronizados',
+          message: 'Seus dados foram carregados do Google Drive',
+        });
+      }
+    });
+
+    return () => clearInterval(syncTimer);
+  }, [autoSync, syncInterval, session, syncToCloud, syncFromCloud, addNotification]);
+
+  // Sincronizar quando o timer parar
+  useEffect(() => {
+    if (!isRunning && lastSyncRef.current) {
+      // Timer acabou de parar, sincronizar
+      syncToCloud();
+    }
+  }, [isRunning, syncToCloud]);
+
+  // Sincronizar antes de fechar a página
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (session?.accessToken) {
+        // Usar sendBeacon para sincronização assíncrona
+        const data = JSON.stringify({
+          categories,
+          timeEntries,
+          activeTimer: isRunning ? activeEntry : null,
+          syncedAt: new Date().toISOString(),
+        });
+
+        navigator.sendBeacon('/api/drive/backup', data);
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden' && session?.accessToken) {
+        syncToCloud();
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [session, categories, timeEntries, activeEntry, isRunning, syncToCloud]);
+
+  return {
+    syncToCloud,
+    syncFromCloud,
+    lastSync: lastSyncRef.current,
+    isSyncing: isSyncingRef.current,
+  };
+}
