@@ -1,0 +1,63 @@
+{
+  "name": "TimeFlow Tracker",
+  "short_name": "TimeFlow",
+  "description": "Gerenciador de tempo pessoal com rastreamento por categorias, dashboard analítico e sincronização com Google Drive",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#6366f1",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": [
+    "productivity",
+    "utilities"
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "Ver estatísticas de tempo",
+      "url": "/?source=pwa"
+    },
+    {
+      "name": "Categorias",
+      "short_name": "Categorias",
+      "description": "Gerenciar categorias",
+      "url": "/categories?source=pwa"
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false
+}

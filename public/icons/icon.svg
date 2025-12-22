@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="512" height="512" rx="96" fill="url(#gradient)"/>
+  
+  <!-- Clock Circle -->
+  <circle cx="256" cy="256" r="160" fill="none" stroke="white" stroke-width="24" opacity="0.3"/>
+  <circle cx="256" cy="256" r="160" fill="none" stroke="white" stroke-width="24" stroke-dasharray="251 753" stroke-linecap="round" transform="rotate(-90 256 256)"/>
+  
+  <!-- Clock Hands -->
+  <line x1="256" y1="256" x2="256" y2="140" stroke="white" stroke-width="20" stroke-linecap="round"/>
+  <line x1="256" y1="256" x2="340" y2="256" stroke="white" stroke-width="16" stroke-linecap="round"/>
+  
+  <!-- Center Dot -->
+  <circle cx="256" cy="256" r="20" fill="white"/>
+  
+  <!-- Play Triangle (representing active timer) -->
+  <polygon points="380,380 380,440 430,410" fill="white" opacity="0.9"/>
+</svg>
