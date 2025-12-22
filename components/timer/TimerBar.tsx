@@ -6,6 +6,7 @@ import { LoadingState } from '@/components/ui/loading-state';
 import { cn, formatTime } from '@/lib/utils';
 import { useTimerStore } from '@/stores/timerStore';
 import { useCategoryStore } from '@/stores/categoryStore';
+import { useAutoSync } from '@/hooks/useAutoSync';
 import { TIMER_UPDATE_INTERVAL } from '@/lib/constants';
 import type { Category, TimeEntry } from '@/types';
 import {
@@ -73,6 +74,7 @@ export function TimerBar({
   // Sempre chama o hook, mas pode sobrescrever com props
   const timerStoreFromHook = useTimerStore();
   const { categories: storeCategories, initializeDefaults } = useCategoryStore();
+  const { syncToCloud } = useAutoSync({ autoSync: false }); // Desabilitar auto-sync aqui, já que é feito no TimerSync
 
   // Usa o store injetado (testes) ou o hook
   const timerStore = store || timerStoreFromHook;
@@ -87,8 +89,10 @@ export function TimerBar({
   useEffect(() => {
     if (storeCategories.length === 0 && userId) {
       initializeDefaults(userId);
+      // Sincronizar as categorias padrão recém-criadas para a nuvem
+      setTimeout(() => syncToCloud(), 100); // Pequeno delay para garantir que as categorias foram salvas localmente
     }
-  }, [storeCategories.length, userId, initializeDefaults]);
+  }, [storeCategories.length, userId, initializeDefaults, syncToCloud]);
 
   // Atualiza elapsed a cada segundo quando timer ativo
   useEffect(() => {

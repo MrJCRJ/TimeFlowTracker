@@ -21,6 +21,16 @@ import userEvent from '@testing-library/user-event';
 import { TimerBar } from '@/components/timer/TimerBar';
 import type { Category } from '@/types';
 
+// Mock do useAutoSync - deve vir antes dos imports que o usam
+jest.mock('@/hooks/useAutoSync', () => ({
+  useAutoSync: () => ({
+    syncToCloud: jest.fn(),
+    syncFromCloud: jest.fn(),
+    lastSync: null,
+    isSyncing: false,
+  }),
+}));
+
 // Mock do useCategoryStore - deve vir antes dos imports que o usam
 const mockInitializeDefaults = jest.fn();
 jest.mock('@/stores/categoryStore', () => ({

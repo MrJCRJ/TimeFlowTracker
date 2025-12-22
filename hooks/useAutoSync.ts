@@ -79,11 +79,11 @@ export function useAutoSync(config: Partial<SyncConfig> = {}) {
       const data = await response.json();
 
       if (data.success && data.data) {
-        // Atualizar dados locais com dados da nuvem
-        if (data.data.categories) {
+        // Atualizar dados locais com dados da nuvem apenas se houver dados reais
+        if (data.data.categories && data.data.categories.length > 0) {
           setCategories(data.data.categories);
         }
-        if (data.data.timeEntries) {
+        if (data.data.timeEntries && data.data.timeEntries.length > 0) {
           setTimeEntries(data.data.timeEntries);
         }
 
