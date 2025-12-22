@@ -66,11 +66,11 @@ export function Header({ user }: HeaderProps) {
         throw new Error('Token de acesso do Google não encontrado. Faça login novamente.');
       }
 
-      // Mostrar notificação de início
+      // Mostrar notificação de início (mais discreta)
       useNotificationStore.getState().addNotification({
         type: 'info',
         title: 'Sincronizando',
-        message: 'Sincronizando dados com Google Drive...',
+        message: 'Sincronizando dados...',
       });
 
       // 1. Fazer backup dos dados locais para o Drive
@@ -125,11 +125,11 @@ export function Header({ user }: HeaderProps) {
         });
       }
 
-      // Mostrar notificação de sucesso
+      // Mostrar notificação de sucesso (mais discreta)
       useNotificationStore.getState().addNotification({
         type: 'success',
-        title: 'Sincronização Concluída',
-        message: 'Dados sincronizados com sucesso no Google Drive',
+        title: 'Sincronizado',
+        message: 'Dados atualizados com sucesso',
       });
     } catch (error) {
       console.error('Erro na sincronização:', error);

@@ -48,6 +48,7 @@ describe('TimerSync', () => {
       expect(mockUseAutoSync).toHaveBeenCalledWith({
         autoSync: true,
         syncInterval: 5,
+        showNotifications: false,
       });
     });
   });

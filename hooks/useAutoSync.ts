@@ -9,15 +9,17 @@ import { useNotificationStore } from '@/stores/notificationStore';
 interface SyncConfig {
   autoSync: boolean;
   syncInterval: number; // em minutos
+  showNotifications?: boolean; // Se deve mostrar notificações automáticas
 }
 
 const DEFAULT_CONFIG: SyncConfig = {
   autoSync: true,
   syncInterval: 5, // 5 minutos
+  showNotifications: false, // Por padrão, não mostrar notificações automáticas
 };
 
 export function useAutoSync(config: Partial<SyncConfig> = {}) {
-  const { autoSync, syncInterval } = { ...DEFAULT_CONFIG, ...config };
+  const { autoSync, syncInterval, showNotifications } = { ...DEFAULT_CONFIG, ...config };
   const { data: session } = useSession();
   const { addNotification } = useNotificationStore();
 
@@ -114,11 +116,15 @@ export function useAutoSync(config: Partial<SyncConfig> = {}) {
     // Sincronização inicial ao carregar
     syncFromCloud().then((success) => {
       if (success) {
-        addNotification({
-          type: 'info',
-          title: 'Dados Sincronizados',
-          message: 'Seus dados foram carregados do Google Drive',
-        });
+        console.log('Dados carregados do Google Drive na inicialização');
+        // Só mostrar notificação se configurado para mostrar
+        if (showNotifications) {
+          addNotification({
+            type: 'info',
+            title: 'Dados Sincronizados',
+            message: 'Seus dados foram carregados do Google Drive',
+          });
+        }
       }
     });
 
