@@ -3,6 +3,9 @@ import { getSession, getAccessToken } from '@/lib/auth';
 import { createDriveService } from '@/lib/drive';
 import type { ApiResponse, SyncResult } from '@/types';
 
+// Forçar renderização dinâmica
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/drive/sync
  * Carrega todos os dados do Google Drive

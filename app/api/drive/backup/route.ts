@@ -3,6 +3,9 @@ import { getSession, getAccessToken } from '@/lib/auth';
 import { createDriveService } from '@/lib/drive';
 import type { ApiResponse } from '@/types';
 
+// Forçar renderização dinâmica
+export const dynamic = 'force-dynamic';
+
 /**
  * POST /api/drive/backup
  * Faz backup completo dos dados para o Google Drive

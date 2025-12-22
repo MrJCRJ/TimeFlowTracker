@@ -35,7 +35,12 @@ export default function SettingsPage() {
   const { timeEntries, reset: resetTimer } = useTimerStore();
   const { addNotification } = useNotificationStore();
   const { theme, setTheme, isDark } = useTheme();
-  const { enabled: pushEnabled, permission, isSupported, toggleNotifications } = usePushNotifications();
+  const {
+    enabled: pushEnabled,
+    permission,
+    isSupported,
+    toggleNotifications,
+  } = usePushNotifications();
 
   const [notifications, setNotifications] = useState(true);
   const [autoSync, setAutoSync] = useState(false);
@@ -47,6 +52,9 @@ export default function SettingsPage() {
 
   // Verificar status da conexão com Google Drive
   useEffect(() => {
+    // Só executar no cliente
+    if (typeof window === 'undefined') return;
+
     const checkDriveConnection = async () => {
       if (!session?.accessToken) {
         setDriveConnected(false);
@@ -228,8 +236,7 @@ export default function SettingsPage() {
                 <p className="text-sm text-muted-foreground">
                   {theme === 'system'
                     ? 'Usar tema do sistema'
-                    : `Tema ${theme === 'dark' ? 'escuro' : 'claro'} ativado`
-                  }
+                    : `Tema ${theme === 'dark' ? 'escuro' : 'claro'} ativado`}
                 </p>
               </div>
             </div>
@@ -288,9 +295,8 @@ export default function SettingsPage() {
                   {permission === 'granted'
                     ? 'Receber notificações no navegador'
                     : permission === 'denied'
-                    ? 'Permissão negada - verifique as configurações do navegador'
-                    : 'Permitir notificações push do navegador'
-                  }
+                      ? 'Permissão negada - verifique as configurações do navegador'
+                      : 'Permitir notificações push do navegador'}
                 </p>
               </div>
               <Switch
@@ -303,7 +309,7 @@ export default function SettingsPage() {
           )}
 
           {!isSupported && (
-            <div className="p-3 rounded-lg bg-muted">
+            <div className="rounded-lg bg-muted p-3">
               <p className="text-sm text-muted-foreground">
                 Notificações push não são suportadas neste navegador.
               </p>

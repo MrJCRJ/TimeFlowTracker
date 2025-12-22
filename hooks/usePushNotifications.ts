@@ -50,27 +50,30 @@ export function usePushNotifications() {
   }, [isSupported, setPermission]);
 
   // Mostrar notificação
-  const showNotification = useCallback((title: string, options?: NotificationOptions) => {
-    if (!isSupported || permission !== 'granted' || !enabled) return null;
+  const showNotification = useCallback(
+    (title: string, options?: NotificationOptions) => {
+      if (!isSupported || permission !== 'granted' || !enabled) return null;
 
-    try {
-      const notification = new Notification(title, {
-        icon: '/icon-192x192.png',
-        badge: '/icon-192x192.png',
-        ...options,
-      });
+      try {
+        const notification = new Notification(title, {
+          icon: '/icon-192x192.png',
+          badge: '/icon-192x192.png',
+          ...options,
+        });
 
-      // Auto-fechar após 5 segundos
-      setTimeout(() => {
-        notification.close();
-      }, 5000);
+        // Auto-fechar após 5 segundos
+        setTimeout(() => {
+          notification.close();
+        }, 5000);
 
-      return notification;
-    } catch (error) {
-      console.error('Erro ao mostrar notificação:', error);
-      return null;
-    }
-  }, [isSupported, permission, enabled]);
+        return notification;
+      } catch (error) {
+        console.error('Erro ao mostrar notificação:', error);
+        return null;
+      }
+    },
+    [isSupported, permission, enabled]
+  );
 
   // Ativar/desativar notificações
   const toggleNotifications = useCallback(async () => {

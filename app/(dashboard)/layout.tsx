@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { getSession } from '@/lib/auth';
+import { validateEnvironment } from '@/lib/env-validation';
 import { Providers } from '../providers';
 import { TimerBar } from '@/components/timer/TimerBar';
 import { Sidebar } from '@/components/layout/Sidebar';
@@ -11,6 +12,11 @@ interface DashboardLayoutProps {
 }
 
 export default async function DashboardLayout({ children }: DashboardLayoutProps) {
+  // Validar variáveis de ambiente em produção
+  if (process.env.NODE_ENV === 'production') {
+    validateEnvironment();
+  }
+
   const session = await getSession();
 
   if (!session?.user) {

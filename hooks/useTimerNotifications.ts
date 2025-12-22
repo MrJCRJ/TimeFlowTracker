@@ -82,7 +82,15 @@ export function useTimerNotifications() {
 
       lastNotificationTime.current = currentTime;
     }
-  }, [isRunning, activeEntry, elapsedSeconds, categories, addNotification, canShow, showNotification]);
+  }, [
+    isRunning,
+    activeEntry,
+    elapsedSeconds,
+    categories,
+    addNotification,
+    canShow,
+    showNotification,
+  ]);
 
   // Reset do timer de notificações quando para
   useEffect(() => {

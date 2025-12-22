@@ -24,7 +24,9 @@ export const useThemeStore = create<ThemeStore>()(
         let resolvedTheme: 'light' | 'dark';
 
         if (theme === 'system') {
-          resolvedTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          resolvedTheme = window.matchMedia('(prefers-color-scheme: dark)').matches
+            ? 'dark'
+            : 'light';
         } else {
           resolvedTheme = theme;
         }

@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth-config';
 import { GoogleDriveService } from '@/lib/drive';
 import type { drive_v3 } from 'googleapis';
 
 type DriveFile = drive_v3.Schema$File;
+
+// Forçar renderização dinâmica
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {

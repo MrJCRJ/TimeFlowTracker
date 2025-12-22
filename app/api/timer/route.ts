@@ -4,6 +4,9 @@ import { validate, startTimerSchema, stopTimerSchema } from '@/lib/validations';
 import { generateId, now, diffInSeconds } from '@/lib/utils';
 import type { ApiResponse, TimeEntry, TimerState } from '@/types';
 
+// Forçar renderização dinâmica
+export const dynamic = 'force-dynamic';
+
 // Em produção, use Redis ou banco de dados
 // Por simplicidade, usamos memória (não persiste entre restarts)
 const activeTimers = new Map<string, TimeEntry>();
