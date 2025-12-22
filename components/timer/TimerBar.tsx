@@ -50,7 +50,6 @@ interface TimerBarProps {
   store?: TimerStoreState; // Para testes - sobrescreve o hook
   categories?: Category[]; // Opcional para testes
   isSyncing?: boolean; // Indica se está sincronizando
-  onSyncClick?: () => void; // Callback para sincronização manual
   isLoading?: boolean; // Indica se está carregando dados iniciais
 }
 
@@ -69,7 +68,6 @@ export function TimerBar({
   store,
   categories: propCategories,
   isSyncing = false,
-  onSyncClick,
   isLoading = false,
 }: TimerBarProps) {
   // Sempre chama o hook, mas pode sobrescrever com props
