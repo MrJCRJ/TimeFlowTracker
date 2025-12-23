@@ -54,7 +54,17 @@ export function useAutoSync(config: Partial<SyncConfig> = {}) {
         body: JSON.stringify({
           categories,
           timeEntries,
-          activeTimer: isRunning ? activeEntry : null,
+          preferences: {
+            userId: session.user.id,
+            workHours: { start: '09:00', end: '18:00' },
+            dailyGoals: {},
+            theme: 'system',
+            notifications: true,
+            autoSync: true,
+            syncInterval: 5,
+            updatedAt: new Date().toISOString(),
+            ...(isRunning && activeEntry ? { activeTimer: activeEntry } : {}),
+          },
           syncedAt: new Date().toISOString(),
         }),
       });
@@ -89,12 +99,22 @@ export function useAutoSync(config: Partial<SyncConfig> = {}) {
       const data = await response.json();
 
       if (data.success && data.data) {
-        // Atualizar dados locais com dados da nuvem apenas se houver dados reais
-        if (data.data.categories && data.data.categories.length > 0) {
-          setCategories(data.data.categories);
+        // Estratégia de sincronização inteligente:
+        // - Se Drive tem dados, usar eles (prioridade para Drive)
+        // - Se Drive está vazio mas temos dados locais, manter dados locais
+        // - Se ambos têm dados, Drive ganha
+
+        const hasDriveCategories = data.data.categories && data.data.categories.length > 0;
+        const hasDriveTimeEntries = data.data.timeEntries && data.data.timeEntries.length > 0;
+        const hasLocalCategories = categories.length > 0;
+        const hasLocalTimeEntries = timeEntries.length > 0;
+
+        // Só sobrescrever se Drive tem dados OU se é a primeira sincronização
+        if (hasDriveCategories || !hasLocalCategories) {
+          setCategories(data.data.categories || []);
         }
-        if (data.data.timeEntries && data.data.timeEntries.length > 0) {
-          setTimeEntries(data.data.timeEntries);
+        if (hasDriveTimeEntries || !hasLocalTimeEntries) {
+          setTimeEntries(data.data.timeEntries || []);
         }
 
         // Restaurar timer ativo da nuvem APENAS no carregamento inicial
@@ -161,6 +181,17 @@ export function useAutoSync(config: Partial<SyncConfig> = {}) {
     wasRunningRef.current = isRunning;
   }, [isRunning]);
 
+  // Sincronizar quando dados locais mudarem (com debounce para evitar syncs excessivas)
+  useEffect(() => {
+    if (!session?.accessToken || !autoSync) return;
+
+    const timeoutId = setTimeout(() => {
+      syncToCloud();
+    }, 2000); // Aguardar 2 segundos após mudança para sincronizar
+
+    return () => clearTimeout(timeoutId);
+  }, [categories, timeEntries, session?.accessToken, autoSync, syncToCloud]);
+
   // Sincronizar quando o timer parar
   useEffect(() => {
     if (!isRunning && wasRunningRef.current) {
@@ -193,7 +224,17 @@ export function useAutoSync(config: Partial<SyncConfig> = {}) {
         const data = JSON.stringify({
           categories,
           timeEntries,
-          activeTimer: isRunning ? activeEntry : null,
+          preferences: {
+            userId: session.user.id,
+            workHours: { start: '09:00', end: '18:00' },
+            dailyGoals: {},
+            theme: 'system',
+            notifications: true,
+            autoSync: true,
+            syncInterval: 5,
+            updatedAt: new Date().toISOString(),
+            ...(isRunning && activeEntry ? { activeTimer: activeEntry } : {}),
+          },
           syncedAt: new Date().toISOString(),
         });
 
