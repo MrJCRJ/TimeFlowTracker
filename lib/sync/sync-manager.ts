@@ -90,10 +90,8 @@ export class SyncManager {
     timeEntries: TimeEntry[];
     activeTimerId: string | null;
   } = () => ({ categories: [], timeEntries: [], activeTimerId: null });
-  private setLocalData: (data: {
-    categories: Category[];
-    timeEntries: TimeEntry[];
-  }) => void = () => {};
+  private setLocalData: (data: { categories: Category[]; timeEntries: TimeEntry[] }) => void =
+    () => {};
   private onSyncComplete: (result: SyncResult) => void = () => {};
 
   constructor(config: Partial<SyncManagerConfig> = {}) {
@@ -171,7 +169,9 @@ export class SyncManager {
     }
 
     // Agenda com debounce
-    const delay = immediate ? Math.max(0, this.config.throttleMs - (Date.now() - this.lastSyncTime)) : this.config.debounceMs;
+    const delay = immediate
+      ? Math.max(0, this.config.throttleMs - (Date.now() - this.lastSyncTime))
+      : this.config.debounceMs;
 
     console.log(`[SyncManager] Sync agendado em ${delay}ms`);
 

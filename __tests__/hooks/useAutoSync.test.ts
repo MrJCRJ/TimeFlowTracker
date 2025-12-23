@@ -61,12 +61,12 @@ describe('useAutoSync', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (global.fetch as jest.Mock).mockClear();
-    
+
     // Cria novo mock do SyncManager para cada teste
     mockSyncManager = createMockSyncManager();
-    
+
     mockUseSession.mockReturnValue({ data: mockSession });
-    
+
     // Mock selector-based stores
     mockUseTimerStore.mockImplementation((selector: (state: unknown) => unknown) => {
       const state = {
@@ -78,7 +78,7 @@ describe('useAutoSync', () => {
       };
       return selector ? selector(state) : state;
     });
-    
+
     mockUseCategoryStore.mockImplementation((selector: (state: unknown) => unknown) => {
       const state = {
         categories: [],
@@ -86,16 +86,14 @@ describe('useAutoSync', () => {
       };
       return selector ? selector(state) : state;
     });
-    
+
     mockUseNotificationStore.mockReturnValue({
       addNotification: jest.fn(),
     });
   });
 
   it('deve retornar objeto com métodos de sincronização', () => {
-    const { result } = renderHook(() => 
-      useAutoSync({ syncManagerInstance: mockSyncManager })
-    );
+    const { result } = renderHook(() => useAutoSync({ syncManagerInstance: mockSyncManager }));
 
     expect(result.current).toHaveProperty('syncToCloud');
     expect(result.current).toHaveProperty('syncFromCloud');
@@ -108,11 +106,11 @@ describe('useAutoSync', () => {
   });
 
   it('deve aceitar configuração customizada', () => {
-    const { result } = renderHook(() => 
-      useAutoSync({ 
-        autoSync: false, 
+    const { result } = renderHook(() =>
+      useAutoSync({
+        autoSync: false,
         syncIntervalMinutes: 10,
-        syncManagerInstance: mockSyncManager
+        syncManagerInstance: mockSyncManager,
       })
     );
 
@@ -120,10 +118,10 @@ describe('useAutoSync', () => {
   });
 
   it('deve sincronizar dados quando syncToCloud é chamado', async () => {
-    const { result } = renderHook(() => 
-      useAutoSync({ 
+    const { result } = renderHook(() =>
+      useAutoSync({
         autoSync: false,
-        syncManagerInstance: mockSyncManager
+        syncManagerInstance: mockSyncManager,
       })
     );
 
@@ -138,9 +136,9 @@ describe('useAutoSync', () => {
   it('não deve sincronizar sem token de acesso', async () => {
     mockUseSession.mockReturnValue({ data: null });
 
-    const { result } = renderHook(() => 
+    const { result } = renderHook(() =>
       useAutoSync({
-        syncManagerInstance: mockSyncManager
+        syncManagerInstance: mockSyncManager,
       })
     );
 
@@ -153,12 +151,16 @@ describe('useAutoSync', () => {
   });
 
   it('deve lidar com erro na sincronização', async () => {
-    mockSyncManager.syncToCloud.mockResolvedValueOnce({ success: false, direction: 'upload', error: 'Network error' });
+    mockSyncManager.syncToCloud.mockResolvedValueOnce({
+      success: false,
+      direction: 'upload',
+      error: 'Network error',
+    });
 
-    const { result } = renderHook(() => 
-      useAutoSync({ 
+    const { result } = renderHook(() =>
+      useAutoSync({
         autoSync: false,
-        syncManagerInstance: mockSyncManager
+        syncManagerInstance: mockSyncManager,
       })
     );
 
@@ -171,12 +173,16 @@ describe('useAutoSync', () => {
   });
 
   it('deve lidar com resposta de erro do servidor', async () => {
-    mockSyncManager.syncToCloud.mockResolvedValueOnce({ success: false, direction: 'upload', error: 'Server error' });
+    mockSyncManager.syncToCloud.mockResolvedValueOnce({
+      success: false,
+      direction: 'upload',
+      error: 'Server error',
+    });
 
-    const { result } = renderHook(() => 
-      useAutoSync({ 
+    const { result } = renderHook(() =>
+      useAutoSync({
         autoSync: false,
-        syncManagerInstance: mockSyncManager
+        syncManagerInstance: mockSyncManager,
       })
     );
 
@@ -199,10 +205,10 @@ describe('useAutoSync', () => {
       }),
     });
 
-    const { result } = renderHook(() => 
-      useAutoSync({ 
+    const { result } = renderHook(() =>
+      useAutoSync({
         autoSync: false,
-        syncManagerInstance: mockSyncManager
+        syncManagerInstance: mockSyncManager,
       })
     );
 
@@ -219,7 +225,7 @@ describe('useAutoSync', () => {
 
     // Estado inicial do timer
     let isRunningValue = false;
-    
+
     mockUseTimerStore.mockImplementation((selector: (state: unknown) => unknown) => {
       const state = {
         timeEntries: [],
@@ -232,10 +238,10 @@ describe('useAutoSync', () => {
     });
 
     // Renderizar o hook com timer parado
-    const { rerender } = renderHook(() => 
-      useAutoSync({ 
+    const { rerender } = renderHook(() =>
+      useAutoSync({
         autoSync: false,
-        syncManagerInstance: mockSyncManager
+        syncManagerInstance: mockSyncManager,
       })
     );
 
@@ -259,15 +265,15 @@ describe('useAutoSync', () => {
   });
 
   it('deve configurar o SyncManager com callbacks corretos', () => {
-    renderHook(() => 
+    renderHook(() =>
       useAutoSync({
-        syncManagerInstance: mockSyncManager
+        syncManagerInstance: mockSyncManager,
       })
     );
 
     // Verifica se configure foi chamado
     expect(mockSyncManager.configure).toHaveBeenCalled();
-    
+
     // Verifica se os callbacks estão corretos
     const configCall = mockSyncManager.configure.mock.calls[0][0];
     expect(configCall).toHaveProperty('getAccessToken');
@@ -277,9 +283,9 @@ describe('useAutoSync', () => {
   });
 
   it('deve retornar status do SyncManager', () => {
-    const { result } = renderHook(() => 
+    const { result } = renderHook(() =>
       useAutoSync({
-        syncManagerInstance: mockSyncManager
+        syncManagerInstance: mockSyncManager,
       })
     );
 

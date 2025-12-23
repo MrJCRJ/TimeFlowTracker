@@ -81,7 +81,7 @@ export function useAutoSync(config: Partial<SyncConfig> = {}) {
       syncManagerRef.current = syncManagerInstance;
       return;
     }
-    
+
     if (!syncManagerRef.current) {
       syncManagerRef.current = new SyncManager({
         debounceMs,

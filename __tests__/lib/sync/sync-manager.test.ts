@@ -13,9 +13,9 @@ describe('SyncManager', () => {
   let mockSetLocalData: jest.Mock;
 
   const mockCategories: Category[] = [
-    { 
-      id: 'cat-1', 
-      name: 'Work', 
+    {
+      id: 'cat-1',
+      name: 'Work',
       color: '#FF0000',
       icon: 'briefcase',
       isDefault: false,
@@ -23,9 +23,9 @@ describe('SyncManager', () => {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     },
-    { 
-      id: 'cat-2', 
-      name: 'Study', 
+    {
+      id: 'cat-2',
+      name: 'Study',
       color: '#00FF00',
       icon: 'book',
       isDefault: false,
@@ -36,10 +36,10 @@ describe('SyncManager', () => {
   ];
 
   const mockTimeEntries: TimeEntry[] = [
-    { 
-      id: 'entry-1', 
-      categoryId: 'cat-1', 
-      startTime: '2024-01-01T10:00:00Z', 
+    {
+      id: 'entry-1',
+      categoryId: 'cat-1',
+      startTime: '2024-01-01T10:00:00Z',
       endTime: '2024-01-01T11:00:00Z',
       duration: 3600000,
       userId: 'user-1',
@@ -47,10 +47,10 @@ describe('SyncManager', () => {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     },
-    { 
-      id: 'entry-2', 
-      categoryId: 'cat-2', 
-      startTime: '2024-01-01T14:00:00Z', 
+    {
+      id: 'entry-2',
+      categoryId: 'cat-2',
+      startTime: '2024-01-01T14:00:00Z',
       endTime: '2024-01-01T15:00:00Z',
       duration: 3600000,
       userId: 'user-1',
@@ -63,7 +63,7 @@ describe('SyncManager', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.useFakeTimers();
-    
+
     mockSetLocalData = jest.fn();
 
     syncManager = new SyncManager({
@@ -182,10 +182,10 @@ describe('SyncManager', () => {
 
       // Executa sync e avança timers para os retries
       const syncPromise = syncManager.syncToCloud();
-      
+
       // Avança tempo para passar pelos retries (1s * retry count)
       await jest.advanceTimersByTimeAsync(5000);
-      
+
       const result = await syncPromise;
 
       // Deve tentar retry e falhar
@@ -201,10 +201,10 @@ describe('SyncManager', () => {
 
       // Executa sync e avança timers para os retries
       const syncPromise = syncManager.syncToCloud();
-      
+
       // Avança tempo para passar pelos retries
       await jest.advanceTimersByTimeAsync(5000);
-      
+
       const result = await syncPromise;
 
       expect(result.success).toBe(false);
@@ -215,7 +215,9 @@ describe('SyncManager', () => {
     it('deve fazer download e atualizar dados locais', async () => {
       const cloudData = {
         categories: [{ id: 'new-cat', name: 'New', color: '#0000FF' }],
-        timeEntries: [{ id: 'new-entry', categoryId: 'new-cat', startTime: '2024-01-02T10:00:00Z' }],
+        timeEntries: [
+          { id: 'new-entry', categoryId: 'new-cat', startTime: '2024-01-02T10:00:00Z' },
+        ],
         preferences: null,
       };
 
