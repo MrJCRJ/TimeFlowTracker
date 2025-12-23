@@ -168,7 +168,7 @@ export function useAutoSync(config: Partial<SyncConfig> = {}) {
       // Marcar que estava rodando para não restaurar da nuvem
       wasRunningRef.current = true;
       syncToCloud();
-      
+
       // Após um tempo, resetar o flag para permitir restaurações futuras
       setTimeout(() => {
         wasRunningRef.current = false;
