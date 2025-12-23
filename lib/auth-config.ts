@@ -107,20 +107,38 @@ export const authOptions: NextAuthOptions = {
       }
 
       // Token expirado, renovar
-      return refreshAccessToken({
+      const refreshedToken = await refreshAccessToken({
         refreshToken: token.refreshToken as string | undefined,
         accessToken: token.accessToken as string | undefined,
         accessTokenExpires: token.accessTokenExpires as number | undefined,
       });
+
+      // Preservar dados do usuário ao renovar token
+      return {
+        ...refreshedToken,
+        user: token.user, // Preservar dados do usuário
+      };
     },
 
     async session({ session, token }) {
       if (token) {
         session.accessToken = token.accessToken as string | undefined;
-        session.user = {
-          ...session.user,
-          id: token.sub ?? '',
-        };
+        // Usar dados do usuário do token em vez de session.user
+        if (token.user && typeof token.user === 'object') {
+          const userData = token.user as { id?: string; email?: string; name?: string; image?: string };
+          session.user = {
+            id: token.sub ?? userData.id ?? '',
+            email: userData.email ?? session.user?.email ?? '',
+            name: userData.name ?? session.user?.name ?? '',
+            image: userData.image ?? session.user?.image ?? '',
+          };
+        } else {
+          // Fallback se não houver dados do usuário no token
+          session.user = {
+            ...session.user,
+            id: token.sub ?? '',
+          };
+        }
       }
       return session;
     },
