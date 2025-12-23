@@ -34,8 +34,11 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
             {onToggleSidebar && (
               <button
                 type="button"
-                onClick={onToggleSidebar}
-                className="relative z-50 flex h-10 w-10 items-center justify-center rounded-md transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 active:bg-accent/80 lg:hidden"
+                onClick={() => {
+                  console.log('Menu button clicked');
+                  onToggleSidebar();
+                }}
+                className="relative z-50 flex h-10 w-10 items-center justify-center rounded-md transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 active:bg-accent/80"
                 aria-label="Abrir menu lateral"
               >
                 <Menu className="h-6 w-6" />

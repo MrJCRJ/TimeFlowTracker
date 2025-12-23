@@ -32,21 +32,21 @@ const mockUseTimerStore = require('@/stores/timerStore').useTimerStore;
 const mockUseCategoryStore = require('@/stores/categoryStore').useCategoryStore;
 const mockUseNotificationStore = require('@/stores/notificationStore').useNotificationStore;
 
-// Função helper para criar mock do SyncManager
+// Função helper para criar mock do SimpleSyncManager
 function createMockSyncManager() {
-  return {
+  const mock = {
     configure: jest.fn(),
+    sync: jest.fn().mockResolvedValue({ success: true, action: 'upload' }),
+    forceUpload: jest.fn().mockResolvedValue({ success: true, action: 'upload' }),
+    forceDownload: jest.fn().mockResolvedValue({ success: true, action: 'download' }),
+    reset: jest.fn(),
+    getIsSyncing: jest.fn().mockReturnValue(false),
+    markAsUpdated: jest.fn(),
+    // Métodos para compatibilidade com testes antigos
     syncToCloud: jest.fn().mockResolvedValue({ success: true, direction: 'upload' }),
     syncFromCloud: jest.fn().mockResolvedValue({ success: true, direction: 'download' }),
-    scheduleSync: jest.fn(),
-    cancel: jest.fn(),
-    getStatus: jest.fn().mockReturnValue({
-      isSyncing: false,
-      lastSyncTime: 0,
-      queueLength: 0,
-      hasLocalChanges: false,
-    }),
   };
+  return mock;
 }
 
 describe('useAutoSync', () => {
@@ -256,9 +256,9 @@ describe('useAutoSync', () => {
       jest.advanceTimersByTime(1100);
     });
 
-    // Verificar se scheduleSync foi chamado
+    // Verificar se sync foi chamado
     await waitFor(() => {
-      expect(mockSyncManager.scheduleSync).toHaveBeenCalledWith(true);
+      expect(mockSyncManager.sync).toHaveBeenCalled();
     });
 
     jest.useRealTimers();
