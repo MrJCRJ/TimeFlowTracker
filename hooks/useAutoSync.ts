@@ -10,20 +10,22 @@ interface SyncConfig {
   autoSync: boolean;
   syncInterval: number; // em minutos
   showNotifications?: boolean; // Se deve mostrar notificações automáticas
+  restoreActiveTimer?: boolean; // Se deve restaurar timer ativo da nuvem
 }
 
 const DEFAULT_CONFIG: SyncConfig = {
   autoSync: true,
   syncInterval: 5, // 5 minutos
   showNotifications: false, // Por padrão, não mostrar notificações automáticas
+  restoreActiveTimer: true, // Por padrão, restaurar timer ativo
 };
 
 export function useAutoSync(config: Partial<SyncConfig> = {}) {
-  const { autoSync, syncInterval, showNotifications } = { ...DEFAULT_CONFIG, ...config };
+  const { autoSync, syncInterval, showNotifications, restoreActiveTimer: shouldRestoreTimer } = { ...DEFAULT_CONFIG, ...config };
   const { data: session } = useSession();
   const { addNotification } = useNotificationStore();
 
-  const { timeEntries, activeEntry, isRunning, setTimeEntries } = useTimerStore();
+  const { timeEntries, activeEntry, isRunning, setTimeEntries, restoreActiveTimer } = useTimerStore();
   const { categories, setCategories } = useCategoryStore();
 
   const lastSyncRef = useRef<Date | null>(null);
@@ -87,6 +89,11 @@ export function useAutoSync(config: Partial<SyncConfig> = {}) {
           setTimeEntries(data.data.timeEntries);
         }
 
+        // Restaurar timer ativo da nuvem se configurado e se existe timer ativo salvo
+        if (shouldRestoreTimer && data.data.preferences?.activeTimer && !isRunning) {
+          restoreActiveTimer(data.data.preferences.activeTimer);
+        }
+
         lastSyncRef.current = new Date();
         return true;
       }
@@ -98,7 +105,7 @@ export function useAutoSync(config: Partial<SyncConfig> = {}) {
     } finally {
       isSyncingRef.current = false;
     }
-  }, [session, setCategories, setTimeEntries]);
+  }, [session, setCategories, setTimeEntries, shouldRestoreTimer, isRunning, restoreActiveTimer]);
 
   // Sincronização automática periódica
   useEffect(() => {

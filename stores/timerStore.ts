@@ -17,6 +17,7 @@ interface TimerStoreActions {
   startTimer: (categoryId: string, userId: string, notes?: string) => TimeEntry;
   stopTimer: (notes?: string) => TimeEntry | null;
   updateElapsed: () => void;
+  restoreActiveTimer: (entry: TimeEntry) => void; // Restaurar timer ativo da nuvem
 
   // Time entries
   addTimeEntry: (entry: TimeEntry) => void;
@@ -109,6 +110,22 @@ export const useTimerStore = create<TimerStore>()(
 
         const elapsed = diffInSeconds(activeEntry.startTime, now());
         set({ elapsedSeconds: elapsed });
+      },
+
+      // Restaurar timer ativo da nuvem (para sincronização entre dispositivos)
+      restoreActiveTimer: (entry: TimeEntry) => {
+        // Só restaurar se não houver timer ativo local
+        const { activeEntry: currentActive } = get();
+        if (currentActive) return;
+
+        // Calcular tempo decorrido desde o início
+        const elapsed = diffInSeconds(entry.startTime, now());
+
+        set({
+          isRunning: true,
+          activeEntry: entry,
+          elapsedSeconds: elapsed,
+        });
       },
 
       addTimeEntry: (entry: TimeEntry) => {

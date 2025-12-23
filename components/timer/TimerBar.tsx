@@ -125,9 +125,14 @@ export function TimerBar({
     : null;
 
   // Renderiza ícone da categoria
-  const renderIcon = (iconName: string, color: string) => {
+  const renderIcon = (iconName: string, color: string, isMobile = false) => {
     const Icon = iconMap[iconName] || Folder;
-    return <Icon className="h-4 w-4" style={{ color }} />;
+    return (
+      <Icon
+        className={cn('h-4 w-4', isMobile && 'h-5 w-5 sm:h-4 sm:w-4')}
+        style={{ color }}
+      />
+    );
   };
 
   // Se está carregando dados iniciais
@@ -165,8 +170,9 @@ export function TimerBar({
       aria-label="Barra de timer"
       className={cn('timer-bar', isRunning && 'timer-bar-active', className)}
     >
-      <div className="container mx-auto px-4 py-3">
-        <div className="flex items-center justify-between gap-4">
+      <div className="container mx-auto px-3 py-4 sm:px-4 sm:py-3">
+        {/* Layout responsivo - stack no mobile, row no desktop */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           {/* Categorias / Status */}
           <div className="flex flex-1 items-center gap-2 overflow-hidden">
             {isRunning && activeCategory ? (
@@ -176,20 +182,26 @@ export function TimerBar({
               </div>
             ) : (
               <div className="flex w-full flex-col gap-2">
-                <span className="whitespace-nowrap text-xs text-muted-foreground">
+                <span className="whitespace-nowrap text-xs text-muted-foreground sm:text-sm">
                   Selecione uma categoria para iniciar:
                 </span>
-                <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
+                {/* Grid responsivo para mobile - lista de botões maiores e mais espaçados */}
+                <div className="no-scrollbar grid auto-cols-max grid-flow-col gap-3 overflow-x-auto pb-2 sm:flex sm:gap-2 sm:pb-1">
                   {categories.map((category) => (
                     <button
                       key={category.id}
                       onClick={() => handleStartTimer(category.id)}
                       disabled={isRunning}
                       className={cn(
-                        'flex flex-shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-sm',
+                        // Mobile: botões maiores e mais espaçados
+                        'flex flex-shrink-0 items-center gap-2 rounded-full',
+                        'px-4 py-3 text-base', // Maior padding e texto no mobile
+                        'sm:gap-1.5 sm:px-3 sm:py-1.5 sm:text-sm', // Menor no desktop
+                        'min-w-[100px] justify-center sm:min-w-0 sm:justify-start', // Largura mínima no mobile
                         'border border-border bg-background',
                         'transition-all duration-200',
                         'hover:scale-105 hover:border-primary/50 hover:bg-primary/5',
+                        'active:scale-95 active:bg-primary/10', // Feedback tátil no mobile
                         'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                         'disabled:cursor-not-allowed disabled:opacity-50',
                         activeEntry?.categoryId === category.id &&
@@ -198,7 +210,7 @@ export function TimerBar({
                       aria-label={`Iniciar timer para ${category.name}`}
                       title={category.name}
                     >
-                      {renderIcon(category.icon, category.color)}
+                      {renderIcon(category.icon, category.color, true)}
                       <span className="whitespace-nowrap">{category.name}</span>
                     </button>
                   ))}
@@ -207,12 +219,12 @@ export function TimerBar({
             )}
           </div>
 
-          {/* Timer Display */}
-          <div className="flex flex-shrink-0 items-center gap-3">
+          {/* Timer Display e Controles */}
+          <div className="flex flex-shrink-0 items-center justify-between gap-3 border-t border-border/30 pt-3 sm:justify-end sm:border-t-0 sm:pt-0">
             <div
               data-testid="timer-display"
               className={cn(
-                'font-mono text-2xl font-bold tabular-nums',
+                'font-mono text-2xl font-bold tabular-nums sm:text-2xl',
                 isRunning ? 'animate-pulse text-primary' : 'text-muted-foreground'
               )}
             >

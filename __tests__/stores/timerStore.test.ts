@@ -130,6 +130,47 @@ describe('TimerStore', () => {
     });
   });
 
+  describe('restoreActiveTimer', () => {
+    const mockActiveEntry = {
+      id: 'entry-1',
+      categoryId: 'cat-1',
+      userId: 'user-1',
+      startTime: new Date(Date.now() - 60000).toISOString(), // 1 minuto atrás
+      endTime: null,
+      duration: null,
+      notes: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    it('deve restaurar timer ativo da nuvem', () => {
+      const { restoreActiveTimer } = useTimerStore.getState();
+
+      restoreActiveTimer(mockActiveEntry);
+
+      const state = useTimerStore.getState();
+      expect(state.isRunning).toBe(true);
+      expect(state.activeEntry).toEqual(mockActiveEntry);
+      expect(state.elapsedSeconds).toBeGreaterThanOrEqual(60); // Pelo menos 60 segundos
+    });
+
+    it('não deve restaurar se já houver timer ativo local', () => {
+      // Iniciar timer local primeiro
+      const { startTimer, restoreActiveTimer } = useTimerStore.getState();
+      startTimer('cat-local', 'user-1');
+
+      const stateBefore = useTimerStore.getState();
+      const localEntry = stateBefore.activeEntry;
+
+      // Tentar restaurar timer da nuvem
+      restoreActiveTimer(mockActiveEntry);
+
+      const stateAfter = useTimerStore.getState();
+      expect(stateAfter.activeEntry?.id).toBe(localEntry?.id);
+      expect(stateAfter.activeEntry?.categoryId).toBe('cat-local');
+    });
+  });
+
   describe('CRUD de entradas', () => {
     const mockEntry = {
       id: 'entry-1',
