@@ -39,11 +39,7 @@ export function AppearanceSection({ theme, isDark, onThemeChange }: AppearanceSe
               Ative o modo escuro para reduzir a fadiga ocular
             </p>
           </div>
-          <Switch
-            id="dark-mode"
-            checked={isDark}
-            onCheckedChange={toggleDarkMode}
-          />
+          <Switch id="dark-mode" checked={isDark} onCheckedChange={toggleDarkMode} />
         </div>
 
         {/* Seletor de tema */}

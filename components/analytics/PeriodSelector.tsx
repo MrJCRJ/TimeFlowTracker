@@ -34,11 +34,7 @@ export function PeriodSelector({
   return (
     <div className={cn('space-y-4', className)}>
       {/* Period Buttons */}
-      <div 
-        className="flex flex-wrap gap-2"
-        role="group"
-        aria-label="Selecionar período de tempo"
-      >
+      <div className="flex flex-wrap gap-2" role="group" aria-label="Selecionar período de tempo">
         <Button
           variant={period === 'today' ? 'default' : 'outline'}
           size="sm"
@@ -81,10 +77,7 @@ export function PeriodSelector({
           <CardContent className="pt-4">
             <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end">
               <div className="flex-1 sm:min-w-[160px]">
-                <label 
-                  htmlFor="analytics-start-date" 
-                  className="mb-1 block text-sm font-medium"
-                >
+                <label htmlFor="analytics-start-date" className="mb-1 block text-sm font-medium">
                   Data Inicial
                 </label>
                 <input
@@ -92,14 +85,11 @@ export function PeriodSelector({
                   type="date"
                   value={customStartDate}
                   onChange={(e) => onCustomStartDateChange(e.target.value)}
-                  className="w-full rounded-md border bg-background px-3 py-2 touch-target"
+                  className="touch-target w-full rounded-md border bg-background px-3 py-2"
                 />
               </div>
               <div className="flex-1 sm:min-w-[160px]">
-                <label 
-                  htmlFor="analytics-end-date" 
-                  className="mb-1 block text-sm font-medium"
-                >
+                <label htmlFor="analytics-end-date" className="mb-1 block text-sm font-medium">
                   Data Final
                 </label>
                 <input
@@ -107,7 +97,7 @@ export function PeriodSelector({
                   type="date"
                   value={customEndDate}
                   onChange={(e) => onCustomEndDateChange(e.target.value)}
-                  className="w-full rounded-md border bg-background px-3 py-2 touch-target"
+                  className="touch-target w-full rounded-md border bg-background px-3 py-2"
                 />
               </div>
             </div>

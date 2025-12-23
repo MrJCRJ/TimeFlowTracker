@@ -48,7 +48,7 @@ describe('useActiveTimerDrive', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.useFakeTimers();
-    
+
     // Mock padrão para lista vazia
     mockFetch.mockResolvedValue({
       json: () => Promise.resolve({ success: true, data: [] }),
@@ -61,9 +61,7 @@ describe('useActiveTimerDrive', () => {
 
   describe('inicialização', () => {
     it('deve inicializar com estado padrão', async () => {
-      const { result } = renderHook(() =>
-        useActiveTimerDrive({ enablePolling: false })
-      );
+      const { result } = renderHook(() => useActiveTimerDrive({ enablePolling: false }));
 
       expect(result.current.activeTimers).toEqual([]);
       expect(result.current.isLoading).toBe(false);
@@ -71,9 +69,7 @@ describe('useActiveTimerDrive', () => {
     });
 
     it('deve inicializar deviceInfo', async () => {
-      const { result } = renderHook(() =>
-        useActiveTimerDrive({ enablePolling: false })
-      );
+      const { result } = renderHook(() => useActiveTimerDrive({ enablePolling: false }));
 
       await waitFor(() => {
         expect(result.current.deviceInfo.deviceId).toBe('test-device-123');
@@ -89,9 +85,7 @@ describe('useActiveTimerDrive', () => {
         json: () => Promise.resolve({ success: true, data: [mockTimer] }),
       });
 
-      const { result } = renderHook(() =>
-        useActiveTimerDrive({ enablePolling: false })
-      );
+      const { result } = renderHook(() => useActiveTimerDrive({ enablePolling: false }));
 
       await act(async () => {
         await result.current.refreshTimers();
@@ -104,9 +98,7 @@ describe('useActiveTimerDrive', () => {
     it('deve tratar erro na requisição', async () => {
       mockFetch.mockRejectedValueOnce(new Error('Network error'));
 
-      const { result } = renderHook(() =>
-        useActiveTimerDrive({ enablePolling: false })
-      );
+      const { result } = renderHook(() => useActiveTimerDrive({ enablePolling: false }));
 
       await act(async () => {
         await result.current.refreshTimers();
@@ -119,7 +111,7 @@ describe('useActiveTimerDrive', () => {
   describe('startTimer', () => {
     it('deve iniciar um timer com sucesso', async () => {
       const onTimerStarted = jest.fn();
-      
+
       mockFetch.mockResolvedValueOnce({
         json: () => Promise.resolve({ success: true, data: mockTimer }),
       });
@@ -147,15 +139,14 @@ describe('useActiveTimerDrive', () => {
 
     it('deve tratar erro ao iniciar timer', async () => {
       mockFetch.mockResolvedValueOnce({
-        json: () => Promise.resolve({ 
-          success: false, 
-          error: { message: 'Timer já existe' } 
-        }),
+        json: () =>
+          Promise.resolve({
+            success: false,
+            error: { message: 'Timer já existe' },
+          }),
       });
 
-      const { result } = renderHook(() =>
-        useActiveTimerDrive({ enablePolling: false })
-      );
+      const { result } = renderHook(() => useActiveTimerDrive({ enablePolling: false }));
 
       let timer: ActiveTimerRecord | null = null;
       await act(async () => {
@@ -170,7 +161,7 @@ describe('useActiveTimerDrive', () => {
   describe('stopTimer', () => {
     it('deve parar um timer com sucesso', async () => {
       const onTimerStopped = jest.fn();
-      
+
       // Primeiro retorna lista com timer
       mockFetch.mockResolvedValueOnce({
         json: () => Promise.resolve({ success: true, data: [mockTimer] }),
@@ -209,15 +200,14 @@ describe('useActiveTimerDrive', () => {
 
     it('deve tratar erro ao parar timer', async () => {
       mockFetch.mockResolvedValueOnce({
-        json: () => Promise.resolve({ 
-          success: false, 
-          error: { message: 'Timer não encontrado' } 
-        }),
+        json: () =>
+          Promise.resolve({
+            success: false,
+            error: { message: 'Timer não encontrado' },
+          }),
       });
 
-      const { result } = renderHook(() =>
-        useActiveTimerDrive({ enablePolling: false })
-      );
+      const { result } = renderHook(() => useActiveTimerDrive({ enablePolling: false }));
 
       let entry: TimeEntry | null = null;
       await act(async () => {
@@ -235,9 +225,7 @@ describe('useActiveTimerDrive', () => {
         json: () => Promise.resolve({ success: true }),
       });
 
-      const { result } = renderHook(() =>
-        useActiveTimerDrive({ enablePolling: false })
-      );
+      const { result } = renderHook(() => useActiveTimerDrive({ enablePolling: false }));
 
       let success = false;
       await act(async () => {
@@ -256,15 +244,14 @@ describe('useActiveTimerDrive', () => {
 
     it('deve tratar erro ao cancelar timer', async () => {
       mockFetch.mockResolvedValueOnce({
-        json: () => Promise.resolve({ 
-          success: false, 
-          error: { message: 'Erro ao cancelar' } 
-        }),
+        json: () =>
+          Promise.resolve({
+            success: false,
+            error: { message: 'Erro ao cancelar' },
+          }),
       });
 
-      const { result } = renderHook(() =>
-        useActiveTimerDrive({ enablePolling: false })
-      );
+      const { result } = renderHook(() => useActiveTimerDrive({ enablePolling: false }));
 
       let success = false;
       await act(async () => {
@@ -282,9 +269,7 @@ describe('useActiveTimerDrive', () => {
         json: () => Promise.resolve({ success: true, data: mockTimer }),
       });
 
-      const { result } = renderHook(() =>
-        useActiveTimerDrive({ enablePolling: false })
-      );
+      const { result } = renderHook(() => useActiveTimerDrive({ enablePolling: false }));
 
       let timer: ActiveTimerRecord | null = null;
       await act(async () => {
@@ -301,9 +286,7 @@ describe('useActiveTimerDrive', () => {
         json: () => Promise.resolve({ success: false }),
       });
 
-      const { result } = renderHook(() =>
-        useActiveTimerDrive({ enablePolling: false })
-      );
+      const { result } = renderHook(() => useActiveTimerDrive({ enablePolling: false }));
 
       let timer: ActiveTimerRecord | null = null;
       await act(async () => {
@@ -320,9 +303,7 @@ describe('useActiveTimerDrive', () => {
         json: () => Promise.resolve({ success: true, data: [mockTimer] }),
       });
 
-      const { result } = renderHook(() =>
-        useActiveTimerDrive({ enablePolling: false })
-      );
+      const { result } = renderHook(() => useActiveTimerDrive({ enablePolling: false }));
 
       await act(async () => {
         await result.current.refreshTimers();
@@ -332,9 +313,7 @@ describe('useActiveTimerDrive', () => {
     });
 
     it('deve retornar false quando não há timer ativo', async () => {
-      const { result } = renderHook(() =>
-        useActiveTimerDrive({ enablePolling: false })
-      );
+      const { result } = renderHook(() => useActiveTimerDrive({ enablePolling: false }));
 
       expect(result.current.hasActiveTimer('cat-999')).toBe(false);
     });
@@ -346,9 +325,7 @@ describe('useActiveTimerDrive', () => {
         json: () => Promise.resolve({ success: true, data: [mockTimer] }),
       });
 
-      const { result } = renderHook(() =>
-        useActiveTimerDrive({ enablePolling: false })
-      );
+      const { result } = renderHook(() => useActiveTimerDrive({ enablePolling: false }));
 
       await act(async () => {
         await result.current.refreshTimers();
@@ -360,9 +337,7 @@ describe('useActiveTimerDrive', () => {
     });
 
     it('deve retornar undefined quando não há timer', () => {
-      const { result } = renderHook(() =>
-        useActiveTimerDrive({ enablePolling: false })
-      );
+      const { result } = renderHook(() => useActiveTimerDrive({ enablePolling: false }));
 
       const timer = result.current.getTimerForCategory('cat-999');
       expect(timer).toBeUndefined();
@@ -375,9 +350,7 @@ describe('useActiveTimerDrive', () => {
         json: () => Promise.resolve({ success: true, data: [] }),
       });
 
-      renderHook(() =>
-        useActiveTimerDrive({ enablePolling: true, pollingInterval: 1000 })
-      );
+      renderHook(() => useActiveTimerDrive({ enablePolling: true, pollingInterval: 1000 }));
 
       // Busca inicial
       await waitFor(() => {

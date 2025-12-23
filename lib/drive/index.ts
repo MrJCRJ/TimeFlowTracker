@@ -21,7 +21,11 @@ export class GoogleDriveService {
     this.drive = google.drive({ version: 'v3', auth });
     this.folderManager = new DriveFolderManager(this.drive, accessToken);
     this.fileManager = new DriveFileManager(this.drive, this.folderManager);
-    this.activeTimerManager = new ActiveTimerManager(this.drive, this.folderManager, this.fileManager);
+    this.activeTimerManager = new ActiveTimerManager(
+      this.drive,
+      this.folderManager,
+      this.fileManager
+    );
   }
 
   /**
@@ -218,7 +222,7 @@ export class GoogleDriveService {
   async clearAll(): Promise<void> {
     // Limpa timers ativos também
     await this.clearAllActiveTimers();
-    
+
     await Promise.all([
       this.fileManager.deleteFile(DRIVE_FILES.CATEGORIES),
       this.fileManager.deleteFile(DRIVE_FILES.TIME_ENTRIES),

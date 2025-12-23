@@ -336,14 +336,13 @@ export function CloudTimerBar({ userId, className, isLoading = false }: CloudTim
             )}
 
             {/* Indicador de sincronização */}
-            <SyncIndicator
-              lastSync={null}
-              isSyncing={isDriveLoading}
-              isOnline={true}
-            />
+            <SyncIndicator lastSync={null} isSyncing={isDriveLoading} isOnline={true} />
 
             {/* Info do dispositivo atual */}
-            <div className="flex items-center gap-1 text-xs text-muted-foreground" title={deviceInfo.deviceName}>
+            <div
+              className="flex items-center gap-1 text-xs text-muted-foreground"
+              title={deviceInfo.deviceName}
+            >
               {renderDeviceIcon(deviceInfo.platform)}
               <span className="hidden sm:inline">{deviceInfo.platform}</span>
             </div>

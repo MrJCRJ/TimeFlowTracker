@@ -9,7 +9,7 @@ interface TimerBarWrapperProps {
 
 /**
  * TimerBarWrapper - Wrapper que usa CloudTimerBar para sincronização via Drive
- * 
+ *
  * Este componente utiliza o CloudTimerBar que sincroniza os timers entre
  * dispositivos através do Google Drive. Quando um timer é iniciado,
  * ele cria um arquivo de registro no Drive. Quando é parado (de qualquer

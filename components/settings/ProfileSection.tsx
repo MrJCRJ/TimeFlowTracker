@@ -47,11 +47,7 @@ export function ProfileSection({ user, onSignOut }: ProfileSectionProps) {
             <p className="text-lg font-medium">{user?.name ?? 'Usuário'}</p>
             <p className="text-sm text-muted-foreground">{user?.email ?? 'Não informado'}</p>
           </div>
-          <Button
-            variant="outline"
-            onClick={onSignOut}
-            className="flex items-center gap-2"
-          >
+          <Button variant="outline" onClick={onSignOut} className="flex items-center gap-2">
             <LogOut className="h-4 w-4" />
             Sair
           </Button>

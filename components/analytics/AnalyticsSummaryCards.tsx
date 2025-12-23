@@ -50,9 +50,7 @@ export function AnalyticsSummaryCards({
       value: (
         <div className="flex items-baseline gap-1">
           <span>{categoriesUsed}</span>
-          <span className="text-base font-normal text-muted-foreground">
-            de {totalCategories}
-          </span>
+          <span className="text-base font-normal text-muted-foreground">de {totalCategories}</span>
         </div>
       ),
       description: `${totalEntries} registros totais`,
@@ -68,17 +66,12 @@ export function AnalyticsSummaryCards({
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
-              <Icon 
-                className="h-5 w-5 flex-shrink-0 text-muted-foreground" 
-                aria-hidden="true"
-              />
+              <Icon className="h-5 w-5 flex-shrink-0 text-muted-foreground" aria-hidden="true" />
               <span className="text-xl font-bold sm:text-2xl">
                 {typeof value === 'string' ? value : value}
               </span>
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {description}
-            </p>
+            <p className="mt-1 text-xs text-muted-foreground">{description}</p>
           </CardContent>
         </Card>
       ))}

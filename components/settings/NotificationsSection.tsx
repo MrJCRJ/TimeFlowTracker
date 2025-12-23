@@ -40,9 +40,7 @@ export function NotificationsSection({
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <Label htmlFor="notifications">Notificações no app</Label>
-            <p className="text-sm text-muted-foreground">
-              Receba alertas sobre timers e eventos
-            </p>
+            <p className="text-sm text-muted-foreground">Receba alertas sobre timers e eventos</p>
           </div>
           <Switch
             id="notifications"

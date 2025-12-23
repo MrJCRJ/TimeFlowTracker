@@ -5,14 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import {
-  CloudUpload,
-  RefreshCw,
-  CheckCircle,
-  XCircle,
-  Clock,
-  Database,
-} from 'lucide-react';
+import { CloudUpload, RefreshCw, CheckCircle, XCircle, Clock, Database } from 'lucide-react';
 
 interface SyncSectionProps {
   isConnected: boolean;
@@ -120,11 +113,7 @@ export function SyncSection({
 
         {/* Ações */}
         <div className="flex flex-col gap-2 sm:flex-row">
-          <Button
-            onClick={onSyncNow}
-            disabled={isSyncing || !isConnected}
-            className="flex-1"
-          >
+          <Button onClick={onSyncNow} disabled={isSyncing || !isConnected} className="flex-1">
             {isSyncing ? (
               <>
                 <RefreshCw className="mr-2 h-4 w-4 animate-spin" />

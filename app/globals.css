@@ -204,8 +204,13 @@
   }
 
   @keyframes swipe-hint {
-    0%, 100% { transform: translateX(0); }
-    50% { transform: translateX(10px); }
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+    50% {
+      transform: translateX(10px);
+    }
   }
 
   /* Pulse glow for active timer */
@@ -214,8 +219,13 @@
   }
 
   @keyframes timer-glow {
-    0%, 100% { box-shadow: 0 0 0 0 hsl(var(--primary) / 0.4); }
-    50% { box-shadow: 0 0 0 8px hsl(var(--primary) / 0); }
+    0%,
+    100% {
+      box-shadow: 0 0 0 0 hsl(var(--primary) / 0.4);
+    }
+    50% {
+      box-shadow: 0 0 0 8px hsl(var(--primary) / 0);
+    }
   }
 }
 

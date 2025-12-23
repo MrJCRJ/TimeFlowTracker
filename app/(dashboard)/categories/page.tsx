@@ -97,10 +97,10 @@ export default function CategoriesPage() {
             Gerencie suas categorias de tempo
           </p>
         </div>
-        <Button 
-          onClick={() => setIsFormOpen(true)} 
+        <Button
+          onClick={() => setIsFormOpen(true)}
           disabled={isFormOpen}
-          className="w-full sm:w-auto touch-target"
+          className="touch-target w-full sm:w-auto"
         >
           <Plus className="mr-2 h-4 w-4" />
           Nova Categoria

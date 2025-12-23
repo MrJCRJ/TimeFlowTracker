@@ -28,8 +28,8 @@ export function DangerZoneSection({ isClearing, onClearData }: DangerZoneSection
           <div>
             <p className="font-medium">Limpar todos os dados</p>
             <p className="text-sm text-muted-foreground">
-              Remove permanentemente todas as categorias, registros de tempo e configurações.
-              Esta ação não pode ser desfeita.
+              Remove permanentemente todas as categorias, registros de tempo e configurações. Esta
+              ação não pode ser desfeita.
             </p>
           </div>
           <Button

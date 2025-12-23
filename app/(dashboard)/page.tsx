@@ -95,8 +95,12 @@ export default function DashboardPage() {
             <Clock className="h-3 w-3 text-muted-foreground sm:h-4 sm:w-4" />
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="text-lg font-bold sm:text-2xl">{formatDuration(todayStats.totalSeconds)}</div>
-            <p className="text-[10px] text-muted-foreground sm:text-xs">{todayStats.entriesCount} registros</p>
+            <div className="text-lg font-bold sm:text-2xl">
+              {formatDuration(todayStats.totalSeconds)}
+            </div>
+            <p className="text-[10px] text-muted-foreground sm:text-xs">
+              {todayStats.entriesCount} registros
+            </p>
           </CardContent>
         </Card>
 
@@ -107,8 +111,12 @@ export default function DashboardPage() {
             <TrendingUp className="h-3 w-3 text-muted-foreground sm:h-4 sm:w-4" />
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="text-lg font-bold sm:text-2xl">{formatDuration(weekStats.totalSeconds)}</div>
-            <p className="text-[10px] text-muted-foreground sm:text-xs">{weekStats.entriesCount} registros</p>
+            <div className="text-lg font-bold sm:text-2xl">
+              {formatDuration(weekStats.totalSeconds)}
+            </div>
+            <p className="text-[10px] text-muted-foreground sm:text-xs">
+              {weekStats.entriesCount} registros
+            </p>
           </CardContent>
         </Card>
 
@@ -126,7 +134,9 @@ export default function DashboardPage() {
                     className="h-2 w-2 flex-shrink-0 rounded-full sm:h-3 sm:w-3"
                     style={{ backgroundColor: topCategory.categoryColor }}
                   />
-                  <span className="truncate text-base font-bold sm:text-2xl">{topCategory.categoryName}</span>
+                  <span className="truncate text-base font-bold sm:text-2xl">
+                    {topCategory.categoryName}
+                  </span>
                 </>
               ) : (
                 <span className="text-base font-bold text-muted-foreground sm:text-2xl">-</span>
@@ -167,7 +177,7 @@ export default function DashboardPage() {
 
         {/* Active Timer Card */}
         {isRunning && activeEntry && (
-          <Card className="border-primary/50 bg-primary/5 timer-glow">
+          <Card className="timer-glow border-primary/50 bg-primary/5">
             <CardHeader className="pb-2 sm:pb-4">
               <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
                 <span className="h-2 w-2 animate-pulse rounded-full bg-primary" />

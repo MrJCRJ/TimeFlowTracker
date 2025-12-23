@@ -139,10 +139,10 @@ export default function AnalyticsPage() {
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex flex-col justify-between gap-3 sm:gap-4 sm:flex-row sm:items-center">
+      <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center sm:gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Análise</h1>
-          <p className="mt-1 text-sm sm:text-base text-muted-foreground">
+          <h1 className="text-2xl font-bold sm:text-3xl">Análise</h1>
+          <p className="mt-1 text-sm text-muted-foreground sm:text-base">
             Visualize seu uso do tempo
           </p>
         </div>
@@ -194,15 +194,13 @@ export default function AnalyticsPage() {
         </div>
       ) : (
         <Card>
-          <CardContent className="py-12 sm:py-16 text-center">
-            <Clock 
-              className="mx-auto mb-4 h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground opacity-50" 
+          <CardContent className="py-12 text-center sm:py-16">
+            <Clock
+              className="mx-auto mb-4 h-12 w-12 text-muted-foreground opacity-50 sm:h-16 sm:w-16"
               aria-hidden="true"
             />
-            <h3 className="mb-2 text-lg sm:text-xl font-medium">
-              Nenhum dado para este período
-            </h3>
-            <p className="mx-auto max-w-md text-sm sm:text-base text-muted-foreground">
+            <h3 className="mb-2 text-lg font-medium sm:text-xl">Nenhum dado para este período</h3>
+            <p className="mx-auto max-w-md text-sm text-muted-foreground sm:text-base">
               {period === 'custom' && (!customStartDate || !customEndDate)
                 ? 'Selecione as datas inicial e final para visualizar os dados.'
                 : 'Comece a rastrear seu tempo para ver as análises aqui.'}

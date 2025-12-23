@@ -16,8 +16,16 @@ describe('device utilities', () => {
 
     it('deve retornar uma das plataformas conhecidas ou Unknown', () => {
       const platform = detectPlatform();
-      const knownPlatforms = ['Android', 'iOS', 'Windows Phone', 'macOS', 'Windows', 'Linux', 'Unknown'];
-      
+      const knownPlatforms = [
+        'Android',
+        'iOS',
+        'Windows Phone',
+        'macOS',
+        'Windows',
+        'Linux',
+        'Unknown',
+      ];
+
       expect(knownPlatforms).toContain(platform);
     });
   });
@@ -33,7 +41,7 @@ describe('device utilities', () => {
     it('deve retornar um dos navegadores conhecidos', () => {
       const browser = detectBrowser();
       const knownBrowsers = ['Chrome', 'Safari', 'Firefox', 'Edge', 'Opera', 'Browser'];
-      
+
       expect(knownBrowsers).toContain(browser);
     });
   });
@@ -64,7 +72,7 @@ describe('device utilities', () => {
 describe('device identification (smoke tests)', () => {
   it('should export all device functions', async () => {
     const deviceModule = await import('@/lib/device');
-    
+
     expect(typeof deviceModule.getDeviceId).toBe('function');
     expect(typeof deviceModule.getDeviceName).toBe('function');
     expect(typeof deviceModule.getDeviceInfo).toBe('function');
@@ -74,7 +82,7 @@ describe('device identification (smoke tests)', () => {
   it('getDeviceInfo should return correct structure', async () => {
     const { getDeviceInfo } = await import('@/lib/device');
     const info = getDeviceInfo();
-    
+
     expect(info).toHaveProperty('deviceId');
     expect(info).toHaveProperty('deviceName');
     expect(info).toHaveProperty('platform');

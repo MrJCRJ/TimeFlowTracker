@@ -2,23 +2,18 @@ import { drive_v3 } from 'googleapis';
 import { DriveFolderManager } from './folder-manager';
 import { DriveFileManager } from './file-manager';
 import { generateId, now, diffInSeconds } from '../utils';
-import type {
-  ActiveTimerRecord,
-  ActiveTimerFile,
-  DeviceInfo,
-  TimeEntry,
-} from '@/types';
+import type { ActiveTimerRecord, ActiveTimerFile, DeviceInfo, TimeEntry } from '@/types';
 
 /**
  * Gerenciador de Timers Ativos no Google Drive
- * 
+ *
  * Este módulo implementa um sistema de sincronização de timers entre dispositivos
  * usando arquivos de registro no Google Drive.
- * 
+ *
  * Fluxo:
  * 1. Ao INICIAR timer: Cria arquivo active_timer_{categoryId}.json com deviceId e timestamp
  * 2. Ao PARAR timer: Lê arquivo, calcula duração, cria TimeEntry, apaga arquivo
- * 
+ *
  * Isso permite que:
  * - Dispositivo A inicie um timer
  * - Dispositivo B pare o timer (mesmo sem sincronização prévia)
@@ -58,7 +53,7 @@ export class ActiveTimerManager {
     if (existingTimer) {
       throw new Error(
         `Já existe um timer ativo para esta categoria. ` +
-        `Iniciado por: ${existingTimer.deviceName} em ${new Date(existingTimer.startTime).toLocaleString()}`
+          `Iniciado por: ${existingTimer.deviceName} em ${new Date(existingTimer.startTime).toLocaleString()}`
       );
     }
 
@@ -79,7 +74,9 @@ export class ActiveTimerManager {
     };
 
     await this.fileManager.writeFile(timerFileName, fileData);
-    console.log(`[ActiveTimerManager] Timer registrado para categoria ${categoryId} por ${deviceInfo.deviceName}`);
+    console.log(
+      `[ActiveTimerManager] Timer registrado para categoria ${categoryId} por ${deviceInfo.deviceName}`
+    );
 
     return record;
   }
@@ -89,7 +86,7 @@ export class ActiveTimerManager {
    */
   async getActiveTimer(categoryId: string): Promise<ActiveTimerRecord | null> {
     const timerFileName = this.getTimerFileName(categoryId);
-    
+
     try {
       const data = await this.fileManager.readFile<ActiveTimerFile>(timerFileName);
       return data?.timer ?? null;
@@ -140,12 +137,14 @@ export class ActiveTimerManager {
     notes?: string
   ): Promise<TimeEntry | null> {
     const timerFileName = this.getTimerFileName(categoryId);
-    
+
     // Busca o timer ativo
     const activeTimer = await this.getActiveTimer(categoryId);
-    
+
     if (!activeTimer) {
-      console.warn(`[ActiveTimerManager] Nenhum timer ativo encontrado para categoria ${categoryId}`);
+      console.warn(
+        `[ActiveTimerManager] Nenhum timer ativo encontrado para categoria ${categoryId}`
+      );
       return null;
     }
 
@@ -170,10 +169,10 @@ export class ActiveTimerManager {
       await this.fileManager.deleteFile(timerFileName);
       console.log(
         `[ActiveTimerManager] Timer finalizado. ` +
-        `Categoria: ${categoryId}, ` +
-        `Iniciado por: ${activeTimer.deviceName}, ` +
-        `Finalizado por: ${deviceInfo.deviceName}, ` +
-        `Duração: ${duration}s`
+          `Categoria: ${categoryId}, ` +
+          `Iniciado por: ${activeTimer.deviceName}, ` +
+          `Finalizado por: ${deviceInfo.deviceName}, ` +
+          `Duração: ${duration}s`
       );
     } catch (error) {
       console.error('[ActiveTimerManager] Erro ao deletar arquivo de timer:', error);
@@ -188,7 +187,7 @@ export class ActiveTimerManager {
    */
   async cancelTimer(categoryId: string): Promise<boolean> {
     const timerFileName = this.getTimerFileName(categoryId);
-    
+
     try {
       const deleted = await this.fileManager.deleteFile(timerFileName);
       if (deleted) {

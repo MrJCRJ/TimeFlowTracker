@@ -23,7 +23,7 @@ const createMockFileManager = () => ({
 describe('ActiveTimerManager', () => {
   let manager: ActiveTimerManager;
   let mockFileManager: ReturnType<typeof createMockFileManager>;
-  
+
   const mockDeviceInfo: DeviceInfo = {
     deviceId: 'device-123',
     deviceName: 'Test Device',
@@ -44,7 +44,7 @@ describe('ActiveTimerManager', () => {
   describe('registerTimerStart', () => {
     it('deve criar um registro de timer ativo', async () => {
       mockFileManager.readFile.mockResolvedValue(null);
-      
+
       const timer = await manager.registerTimerStart(
         'category-1',
         'user-1',
@@ -221,9 +221,7 @@ describe('ActiveTimerManager', () => {
         { name: 'active_timer_category-2.json' },
         { name: 'categories.json' }, // Deve ser ignorado
       ]);
-      mockFileManager.readFile
-        .mockResolvedValueOnce(timer1)
-        .mockResolvedValueOnce(timer2);
+      mockFileManager.readFile.mockResolvedValueOnce(timer1).mockResolvedValueOnce(timer2);
 
       const timers = await manager.listActiveTimers();
 
