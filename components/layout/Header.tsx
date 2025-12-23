@@ -33,15 +33,12 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
           <div className="flex items-center gap-2">
             {onToggleSidebar && (
               <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  onToggleSidebar();
-                }}
-                className="rounded-md p-2 transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 lg:hidden"
+                type="button"
+                onClick={onToggleSidebar}
+                className="relative z-50 flex h-10 w-10 items-center justify-center rounded-md transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 active:bg-accent/80 lg:hidden"
                 aria-label="Abrir menu lateral"
               >
-                <Menu className="h-5 w-5" />
+                <Menu className="h-6 w-6" />
               </button>
             )}
             <SyncButton onClick={handleSync} isLoading={isSyncing} />

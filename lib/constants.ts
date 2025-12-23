@@ -23,6 +23,7 @@ export const DRIVE_FILES = {
   CATEGORIES: 'categories.json',
   TIME_ENTRIES: 'time_entries.json',
   PREFERENCES: 'preferences.json',
+  SYNC_METADATA: 'sync-metadata.json',
 } as const;
 
 // API Routes

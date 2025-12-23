@@ -136,6 +136,7 @@ export function useSync() {
 
     const now = new Date().toISOString();
 
+    // 1. Enviar dados para o Drive
     const response = await fetch('/api/drive/sync/upload', {
       method: 'POST',
       headers: {
@@ -152,6 +153,18 @@ export function useSync() {
       throw new Error('Falha ao enviar dados para o Drive');
     }
 
+    // 2. Atualizar arquivo sync-metadata.json no Drive
+    await fetch('/api/drive/sync/metadata', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        updatedAt: now,
+        deviceName: getDeviceName(),
+      }),
+    });
+
     // Atualizar timestamp local
     setLocalUpdatedAt(now);
 
@@ -163,4 +176,19 @@ export function useSync() {
   };
 
   return { handleSync, isSyncing };
+}
+
+/**
+ * Obtém nome do dispositivo
+ */
+function getDeviceName(): string {
+  if (typeof window === 'undefined') return 'Server';
+
+  const ua = navigator.userAgent;
+  if (/Android/i.test(ua)) return 'Android';
+  if (/iPhone|iPad|iPod/i.test(ua)) return 'iOS';
+  if (/Windows/i.test(ua)) return 'Windows';
+  if (/Mac/i.test(ua)) return 'Mac';
+  if (/Linux/i.test(ua)) return 'Linux';
+  return 'Browser';
 }

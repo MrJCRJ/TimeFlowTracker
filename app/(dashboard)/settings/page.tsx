@@ -47,11 +47,23 @@ export default function SettingsPage() {
       }
 
       try {
-        const response = await fetch('/api/drive/status');
-        const data = await response.json();
-        setDriveConnected(data.connected);
-        if (data.lastBackup) {
-          setLastSync(new Date(data.lastBackup).toLocaleString('pt-BR'));
+        // Verificar conexão
+        const statusResponse = await fetch('/api/drive/status');
+        const statusData = await statusResponse.json();
+        setDriveConnected(statusData.connected);
+
+        // Buscar última sincronização do arquivo sync-metadata.json
+        const metadataResponse = await fetch('/api/drive/sync/metadata');
+        const metadataData = await metadataResponse.json();
+
+        if (metadataData.success && metadataData.data?.updatedAt) {
+          const lastSyncDate = new Date(metadataData.data.updatedAt);
+          const deviceInfo = metadataData.data.lastSyncDevice
+            ? ` (${metadataData.data.lastSyncDevice})`
+            : '';
+          setLastSync(lastSyncDate.toLocaleString('pt-BR') + deviceInfo);
+        } else if (statusData.lastBackup) {
+          setLastSync(new Date(statusData.lastBackup).toLocaleString('pt-BR'));
         }
       } catch (error) {
         console.error('Erro ao verificar status do Drive:', error);
@@ -182,15 +194,30 @@ export default function SettingsPage() {
     setSyncStatus('idle');
 
     try {
-      const response = await fetch('/api/drive/sync', {
+      const now = new Date().toISOString();
+
+      // Enviar dados para o Drive
+      const response = await fetch('/api/drive/sync/upload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ categories, timeEntries }),
+        body: JSON.stringify({
+          categories,
+          timeEntries,
+          updatedAt: now,
+        }),
       });
 
-      const data = await response.json();
-
       if (response.ok) {
+        // Atualizar arquivo sync-metadata.json
+        await fetch('/api/drive/sync/metadata', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            updatedAt: now,
+            deviceName: getDeviceName(),
+          }),
+        });
+
         setSyncStatus('success');
         setLastSync(new Date().toLocaleString('pt-BR'));
         addNotification({
@@ -199,11 +226,12 @@ export default function SettingsPage() {
           message: 'Seus dados foram sincronizados com sucesso no Google Drive.',
         });
       } else {
+        const data = await response.json();
         setSyncStatus('error');
         addNotification({
           type: 'error',
           title: 'Erro na sincronização',
-          message: data.error || 'Ocorreu um erro ao sincronizar os dados.',
+          message: data.error?.message || 'Ocorreu um erro ao sincronizar os dados.',
         });
       }
     } catch (error) {
@@ -217,6 +245,19 @@ export default function SettingsPage() {
     } finally {
       setIsSyncing(false);
     }
+  };
+
+  // Obtém nome do dispositivo
+  const getDeviceName = (): string => {
+    if (typeof window === 'undefined') return 'Server';
+
+    const ua = navigator.userAgent;
+    if (/Android/i.test(ua)) return 'Android';
+    if (/iPhone|iPad|iPod/i.test(ua)) return 'iOS';
+    if (/Windows/i.test(ua)) return 'Windows';
+    if (/Mac/i.test(ua)) return 'Mac';
+    if (/Linux/i.test(ua)) return 'Linux';
+    return 'Browser';
   };
 
   const handleExportData = () => {
