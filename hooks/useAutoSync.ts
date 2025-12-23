@@ -21,15 +21,23 @@ const DEFAULT_CONFIG: SyncConfig = {
 };
 
 export function useAutoSync(config: Partial<SyncConfig> = {}) {
-  const { autoSync, syncInterval, showNotifications, restoreActiveTimer: shouldRestoreTimer } = { ...DEFAULT_CONFIG, ...config };
+  const {
+    autoSync,
+    syncInterval,
+    showNotifications,
+    restoreActiveTimer: shouldRestoreTimer,
+  } = { ...DEFAULT_CONFIG, ...config };
   const { data: session } = useSession();
   const { addNotification } = useNotificationStore();
 
-  const { timeEntries, activeEntry, isRunning, setTimeEntries, restoreActiveTimer } = useTimerStore();
+  const { timeEntries, activeEntry, isRunning, setTimeEntries, restoreActiveTimer } =
+    useTimerStore();
   const { categories, setCategories } = useCategoryStore();
 
   const lastSyncRef = useRef<Date | null>(null);
   const isSyncingRef = useRef(false);
+  const wasRunningRef = useRef(false); // Controle para evitar restaurar timer logo após parar
+  const initialLoadDoneRef = useRef(false); // Controle para saber se já fez o carregamento inicial
 
   // Função para fazer backup no Google Drive
   const syncToCloud = useCallback(async () => {
@@ -89,11 +97,20 @@ export function useAutoSync(config: Partial<SyncConfig> = {}) {
           setTimeEntries(data.data.timeEntries);
         }
 
-        // Restaurar timer ativo da nuvem se configurado e se existe timer ativo salvo
-        if (shouldRestoreTimer && data.data.preferences?.activeTimer && !isRunning) {
+        // Restaurar timer ativo da nuvem APENAS no carregamento inicial
+        // e se não havia timer rodando localmente antes
+        if (
+          shouldRestoreTimer &&
+          data.data.preferences?.activeTimer &&
+          !isRunning &&
+          !wasRunningRef.current && // Não restaurar se o timer acabou de ser parado
+          !initialLoadDoneRef.current // Apenas no carregamento inicial
+        ) {
           restoreActiveTimer(data.data.preferences.activeTimer);
         }
 
+        // Marcar que o carregamento inicial foi feito
+        initialLoadDoneRef.current = true;
         lastSyncRef.current = new Date();
         return true;
       }
@@ -138,11 +155,24 @@ export function useAutoSync(config: Partial<SyncConfig> = {}) {
     return () => clearInterval(syncTimer);
   }, [autoSync, syncInterval, session, syncToCloud, syncFromCloud, addNotification]);
 
+  // Controlar quando o timer muda de estado para evitar restaurações indevidas
+  useEffect(() => {
+    // Atualizar ref para saber se o timer estava rodando antes
+    wasRunningRef.current = isRunning;
+  }, [isRunning]);
+
   // Sincronizar quando o timer parar
   useEffect(() => {
     if (!isRunning && lastSyncRef.current) {
-      // Timer acabou de parar, sincronizar
+      // Timer acabou de parar, sincronizar imediatamente
+      // Marcar que estava rodando para não restaurar da nuvem
+      wasRunningRef.current = true;
       syncToCloud();
+      
+      // Após um tempo, resetar o flag para permitir restaurações futuras
+      setTimeout(() => {
+        wasRunningRef.current = false;
+      }, 5000); // 5 segundos de proteção
     }
   }, [isRunning, syncToCloud]);
 

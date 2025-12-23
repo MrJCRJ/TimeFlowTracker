@@ -128,10 +128,7 @@ export function TimerBar({
   const renderIcon = (iconName: string, color: string, isMobile = false) => {
     const Icon = iconMap[iconName] || Folder;
     return (
-      <Icon
-        className={cn('h-4 w-4', isMobile && 'h-5 w-5 sm:h-4 sm:w-4')}
-        style={{ color }}
-      />
+      <Icon className={cn('h-4 w-4', isMobile && 'h-5 w-5 sm:h-4 sm:w-4')} style={{ color }} />
     );
   };
 
