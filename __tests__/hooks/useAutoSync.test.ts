@@ -177,11 +177,14 @@ describe('useAutoSync', () => {
   it('deve sincronizar quando o timer iniciar', async () => {
     jest.useFakeTimers();
 
-    // Mock do timer store inicialmente com timer parado
+    // Criar um mock reativo para isRunning
+    let isRunning = false;
     const mockTimerStore = {
       timeEntries: [],
       activeEntry: null,
-      isRunning: false,
+      get isRunning() {
+        return isRunning;
+      },
       setTimeEntries: jest.fn(),
     };
 
@@ -193,12 +196,14 @@ describe('useAutoSync', () => {
       json: jest.fn().mockResolvedValue({ success: true }),
     });
 
-    renderHook(() => useAutoSync({ autoSync: false }));
+    // Renderizar o hook com timer parado
+    const { rerender } = renderHook(() => useAutoSync({ autoSync: false }));
 
     // Simular timer iniciando
-    mockTimerStore.isRunning = true;
+    isRunning = true;
 
-    // Mock do rerender não é necessário, o hook deve reagir à mudança
+    // Re-renderizar para que o hook detecte a mudança
+    rerender();
 
     // Avançar o tempo para executar o setTimeout
     jest.advanceTimersByTime(600);
