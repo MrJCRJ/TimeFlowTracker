@@ -65,8 +65,10 @@ export function useActiveTimerDrive(
     userAgent: '',
   });
 
-  const previousTimersRef = useRef<ActiveTimerRecord[]>([]);
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const isPollingRef = useRef(false); // Flag específica para polling
+  const previousTimersRef = useRef<ActiveTimerRecord[]>([]);
 
   // Inicializa device info no cliente
   useEffect(() => {
@@ -78,10 +80,14 @@ export function useActiveTimerDrive(
    */
   const refreshTimers = useCallback(async () => {
     try {
-      setIsLoading(true);
       setError(null);
 
       const response = await fetch('/api/drive/active-timer');
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
       const data = await response.json();
 
       if (data.success && Array.isArray(data.data)) {
@@ -104,8 +110,67 @@ export function useActiveTimerDrive(
     } catch (err) {
       console.error('[useActiveTimerDrive] Erro ao buscar timers:', err);
       setError('Erro ao buscar timers ativos');
+    }
+  }, [onRemoteTimerFound]);
+
+  /**
+   * Busca timers via polling (com deduplicação)
+   */
+  const pollTimers = useCallback(async () => {
+    // Evita múltiplas polls simultâneas
+    if (isPollingRef.current) {
+      return;
+    }
+
+    // Cancela request anterior se existir
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // Cria novo AbortController
+    abortControllerRef.current = new AbortController();
+    isPollingRef.current = true;
+
+    try {
+      setError(null);
+
+      const response = await fetch('/api/drive/active-timer', {
+        signal: abortControllerRef.current.signal,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      if (data.success && Array.isArray(data.data)) {
+        const timers = data.data as ActiveTimerRecord[];
+        setActiveTimers(timers);
+
+        // Detecta timers iniciados por outros dispositivos
+        if (onRemoteTimerFound) {
+          const currentDeviceId = getDeviceInfo().deviceId;
+          const newRemoteTimers = timers.filter(
+            (t) =>
+              t.deviceId !== currentDeviceId &&
+              !previousTimersRef.current.some((pt) => pt.id === t.id)
+          );
+          newRemoteTimers.forEach(onRemoteTimerFound);
+        }
+
+        previousTimersRef.current = timers;
+      }
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        // Request foi cancelada, isso é normal
+        return;
+      }
+
+      console.error('[useActiveTimerDrive] Erro ao buscar timers:', err);
+      setError('Erro ao buscar timers ativos');
     } finally {
-      setIsLoading(false);
+      isPollingRef.current = false;
     }
   }, [onRemoteTimerFound]);
 
@@ -281,20 +346,38 @@ export function useActiveTimerDrive(
 
   // Polling para verificar timers ativos
   useEffect(() => {
-    if (!enablePolling) return;
+    if (!enablePolling) {
+      // Cancela polling e requests pendentes quando desabilitado
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = null;
+      }
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
+      isPollingRef.current = false;
+      return;
+    }
 
     // Busca inicial
     refreshTimers();
 
     // Configura polling
-    pollingRef.current = setInterval(refreshTimers, pollingInterval);
+    pollingRef.current = setInterval(pollTimers, pollingInterval);
 
     return () => {
       if (pollingRef.current) {
         clearInterval(pollingRef.current);
+        pollingRef.current = null;
       }
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
+      isPollingRef.current = false;
     };
-  }, [enablePolling, pollingInterval, refreshTimers]);
+  }, [enablePolling, pollingInterval, refreshTimers, pollTimers]);
 
   return {
     activeTimers,

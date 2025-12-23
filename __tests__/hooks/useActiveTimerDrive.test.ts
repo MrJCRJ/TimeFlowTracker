@@ -82,6 +82,8 @@ describe('useActiveTimerDrive', () => {
   describe('refreshTimers', () => {
     it('deve buscar timers ativos', async () => {
       mockFetch.mockResolvedValueOnce({
+        ok: true,
+        ok: true,
         json: () => Promise.resolve({ success: true, data: [mockTimer] }),
       });
 
@@ -113,6 +115,7 @@ describe('useActiveTimerDrive', () => {
       const onTimerStarted = jest.fn();
 
       mockFetch.mockResolvedValueOnce({
+        ok: true,
         json: () => Promise.resolve({ success: true, data: mockTimer }),
       });
 
@@ -139,6 +142,7 @@ describe('useActiveTimerDrive', () => {
 
     it('deve tratar erro ao iniciar timer', async () => {
       mockFetch.mockResolvedValueOnce({
+        ok: true,
         json: () =>
           Promise.resolve({
             success: false,
@@ -164,6 +168,7 @@ describe('useActiveTimerDrive', () => {
 
       // Primeiro retorna lista com timer
       mockFetch.mockResolvedValueOnce({
+        ok: true,
         json: () => Promise.resolve({ success: true, data: [mockTimer] }),
       });
 
@@ -178,6 +183,7 @@ describe('useActiveTimerDrive', () => {
 
       // Mock para parar o timer
       mockFetch.mockResolvedValueOnce({
+        ok: true,
         json: () => Promise.resolve({ success: true, data: mockTimeEntry }),
       });
 
@@ -200,6 +206,7 @@ describe('useActiveTimerDrive', () => {
 
     it('deve tratar erro ao parar timer', async () => {
       mockFetch.mockResolvedValueOnce({
+        ok: true,
         json: () =>
           Promise.resolve({
             success: false,
@@ -222,6 +229,7 @@ describe('useActiveTimerDrive', () => {
   describe('cancelTimer', () => {
     it('deve cancelar um timer com sucesso', async () => {
       mockFetch.mockResolvedValueOnce({
+        ok: true,
         json: () => Promise.resolve({ success: true }),
       });
 
@@ -244,6 +252,7 @@ describe('useActiveTimerDrive', () => {
 
     it('deve tratar erro ao cancelar timer', async () => {
       mockFetch.mockResolvedValueOnce({
+        ok: true,
         json: () =>
           Promise.resolve({
             success: false,
@@ -266,6 +275,7 @@ describe('useActiveTimerDrive', () => {
   describe('getActiveTimer', () => {
     it('deve buscar timer ativo específico', async () => {
       mockFetch.mockResolvedValueOnce({
+        ok: true,
         json: () => Promise.resolve({ success: true, data: mockTimer }),
       });
 
@@ -283,6 +293,7 @@ describe('useActiveTimerDrive', () => {
 
     it('deve retornar null quando não encontrar timer', async () => {
       mockFetch.mockResolvedValueOnce({
+        ok: true,
         json: () => Promise.resolve({ success: false }),
       });
 
@@ -300,6 +311,7 @@ describe('useActiveTimerDrive', () => {
   describe('hasActiveTimer', () => {
     it('deve retornar true quando há timer ativo', async () => {
       mockFetch.mockResolvedValueOnce({
+        ok: true,
         json: () => Promise.resolve({ success: true, data: [mockTimer] }),
       });
 
@@ -322,6 +334,7 @@ describe('useActiveTimerDrive', () => {
   describe('getTimerForCategory', () => {
     it('deve retornar o timer para a categoria', async () => {
       mockFetch.mockResolvedValueOnce({
+        ok: true,
         json: () => Promise.resolve({ success: true, data: [mockTimer] }),
       });
 
@@ -392,6 +405,7 @@ describe('useActiveTimerDrive', () => {
       const onRemoteTimerFound = jest.fn();
 
       mockFetch.mockResolvedValueOnce({
+        ok: true,
         json: () => Promise.resolve({ success: true, data: [remoteTimer] }),
       });
 
@@ -415,6 +429,7 @@ describe('useActiveTimerDrive', () => {
       const onRemoteTimerFound = jest.fn();
 
       mockFetch.mockResolvedValueOnce({
+        ok: true,
         json: () => Promise.resolve({ success: true, data: [mockTimer] }),
       });
 
