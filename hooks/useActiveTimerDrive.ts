@@ -48,7 +48,7 @@ export function useActiveTimerDrive(
   options: UseActiveTimerDriveOptions = {}
 ): UseActiveTimerDriveReturn {
   const {
-    pollingInterval = 30000, // 30 segundos
+    pollingInterval = 300000, // 5 minutos (era 30 segundos)
     enablePolling = true,
     onTimerStarted,
     onTimerStopped,
@@ -69,6 +69,7 @@ export function useActiveTimerDrive(
   const abortControllerRef = useRef<AbortController | null>(null);
   const isPollingRef = useRef(false); // Flag específica para polling
   const previousTimersRef = useRef<ActiveTimerRecord[]>([]);
+  const backoffRef = useRef({ count: 0, until: 0 }); // Para backoff em caso de quota exceeded
 
   // Inicializa device info no cliente
   useEffect(() => {
@@ -94,6 +95,9 @@ export function useActiveTimerDrive(
         const timers = data.data as ActiveTimerRecord[];
         setActiveTimers(timers);
 
+        // Reset backoff em caso de sucesso
+        backoffRef.current = { count: 0, until: 0 };
+
         // Detecta timers iniciados por outros dispositivos
         if (onRemoteTimerFound) {
           const currentDeviceId = getDeviceInfo().deviceId;
@@ -108,6 +112,19 @@ export function useActiveTimerDrive(
         previousTimersRef.current = timers;
       }
     } catch (err) {
+      // Verifica se é erro de quota exceeded
+      const isQuotaError =
+        err instanceof Error &&
+        (err.message.includes('Quota exceeded') ||
+          err.message.includes('rateLimitExceeded') ||
+          err.message.includes('403'));
+
+      if (isQuotaError) {
+        console.warn('[useActiveTimerDrive] Quota exceeded detectado em refreshTimers');
+        setError('Limite de quota do Google Drive excedido. Tente novamente mais tarde.');
+        return;
+      }
+
       console.error('[useActiveTimerDrive] Erro ao buscar timers:', err);
       setError('Erro ao buscar timers ativos');
     }
@@ -117,6 +134,13 @@ export function useActiveTimerDrive(
    * Busca timers via polling (com deduplicação)
    */
   const pollTimers = useCallback(async () => {
+    // Verifica se está em backoff por quota exceeded
+    const now = Date.now();
+    if (backoffRef.current.until > now) {
+      console.log('[useActiveTimerDrive] Em backoff por quota exceeded, pulando polling');
+      return;
+    }
+
     // Evita múltiplas polls simultâneas
     if (isPollingRef.current) {
       return;
@@ -148,6 +172,9 @@ export function useActiveTimerDrive(
         const timers = data.data as ActiveTimerRecord[];
         setActiveTimers(timers);
 
+        // Reset backoff em caso de sucesso
+        backoffRef.current = { count: 0, until: 0 };
+
         // Detecta timers iniciados por outros dispositivos
         if (onRemoteTimerFound) {
           const currentDeviceId = getDeviceInfo().deviceId;
@@ -164,6 +191,28 @@ export function useActiveTimerDrive(
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') {
         // Request foi cancelada, isso é normal
+        return;
+      }
+
+      // Verifica se é erro de quota exceeded
+      const isQuotaError =
+        err instanceof Error &&
+        (err.message.includes('Quota exceeded') ||
+          err.message.includes('rateLimitExceeded') ||
+          err.message.includes('403'));
+
+      if (isQuotaError) {
+        // Implementa backoff exponencial
+        const backoffCount = backoffRef.current.count + 1;
+        const backoffMinutes = Math.min(Math.pow(2, backoffCount), 60); // Máximo 1 hora
+        const backoffUntil = now + backoffMinutes * 60 * 1000;
+
+        backoffRef.current = { count: backoffCount, until: backoffUntil };
+
+        console.warn(
+          `[useActiveTimerDrive] Quota exceeded detectado. Backoff por ${backoffMinutes} minutos até ${new Date(backoffUntil).toLocaleString()}`
+        );
+        setError(`Limite de quota excedido. Sincronização pausada por ${backoffMinutes} minutos.`);
         return;
       }
 

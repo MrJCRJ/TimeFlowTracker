@@ -7,8 +7,9 @@ import { DRIVE_FOLDER_NAME } from '../constants';
  */
 
 // Cache global para evitar múltiplas criações de pasta
-const folderCache = new Map<string, string>();
+const folderCache = new Map<string, { folderId: string; lastVerified: number }>();
 const pendingFolderCreation = new Map<string, Promise<string>>();
+const VERIFICATION_INTERVAL = 60 * 60 * 1000; // 1 hora em ms
 
 export class DriveFolderManager {
   private drive: drive_v3.Drive;
@@ -24,14 +25,23 @@ export class DriveFolderManager {
    * Usa lock para evitar race conditions
    */
   async getOrCreateFolder(): Promise<string> {
+    const now = Date.now();
+
     // Verificar cache primeiro
-    const cachedFolderId = folderCache.get(this.accessToken);
-    if (cachedFolderId) {
-      // Verificar se a pasta ainda existe
+    const cached = folderCache.get(this.accessToken);
+    if (cached) {
+      // Verificar se precisa revalidar a pasta
+      if (now - cached.lastVerified < VERIFICATION_INTERVAL) {
+        return cached.folderId;
+      }
+
+      // Revalidar se a pasta ainda existe
       try {
-        const exists = await this.verifyFolderExists(cachedFolderId);
+        const exists = await this.verifyFolderExists(cached.folderId);
         if (exists) {
-          return cachedFolderId;
+          // Atualizar timestamp de verificação
+          cached.lastVerified = now;
+          return cached.folderId;
         }
         // Pasta não existe mais, remover do cache
         folderCache.delete(this.accessToken);
@@ -52,7 +62,7 @@ export class DriveFolderManager {
 
     try {
       const folderId = await creationPromise;
-      folderCache.set(this.accessToken, folderId);
+      folderCache.set(this.accessToken, { folderId, lastVerified: now });
       return folderId;
     } finally {
       pendingFolderCreation.delete(this.accessToken);
