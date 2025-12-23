@@ -58,7 +58,9 @@ export class GoogleDriveService {
    * Lê categorias do Drive
    */
   async readCategories(): Promise<Category[]> {
-    const data = await this.fileManager.readFile<{ categories: Category[] }>(DRIVE_FILES.CATEGORIES);
+    const data = await this.fileManager.readFile<{ categories: Category[] }>(
+      DRIVE_FILES.CATEGORIES
+    );
     return data?.categories ?? [];
   }
 
@@ -78,7 +80,9 @@ export class GoogleDriveService {
    * Lê time entries do Drive
    */
   async readTimeEntries(): Promise<TimeEntry[]> {
-    const data = await this.fileManager.readFile<{ timeEntries: TimeEntry[] }>(DRIVE_FILES.TIME_ENTRIES);
+    const data = await this.fileManager.readFile<{ timeEntries: TimeEntry[] }>(
+      DRIVE_FILES.TIME_ENTRIES
+    );
     return data?.timeEntries ?? [];
   }
 

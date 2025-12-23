@@ -84,22 +84,22 @@ export default function SettingsPage() {
         // Resetar stores primeiro
         resetCategories();
         resetTimer();
-        
+
         // Limpar localStorage específico do TimeFlow
         const keysToRemove = [
           'timer-storage',
-          'timeflow_categories', 
+          'timeflow_categories',
           'timeflow_timer_state',
           'timeflow_time_entries',
           'timeflow_preferences',
           'timeflow_sync_metadata',
-          'timeflow_theme'
+          'timeflow_theme',
         ];
-        
-        keysToRemove.forEach(key => {
+
+        keysToRemove.forEach((key) => {
           localStorage.removeItem(key);
         });
-        
+
         // Também limpar dados do Drive se estiver conectado
         if (session?.accessToken) {
           try {
@@ -110,7 +110,7 @@ export default function SettingsPage() {
                 'Content-Type': 'application/json',
               },
             });
-            
+
             if (!response.ok) {
               console.warn('Não foi possível limpar dados do Drive');
             }
@@ -118,13 +118,13 @@ export default function SettingsPage() {
             console.warn('Não foi possível limpar dados do Drive:', driveError);
           }
         }
-        
+
         addNotification({
           type: 'success',
           title: 'Dados limpos',
           message: 'Todos os dados foram removidos com sucesso.',
         });
-        
+
         // Recarregar a página para garantir que tudo foi limpo
         setTimeout(() => {
           window.location.reload();

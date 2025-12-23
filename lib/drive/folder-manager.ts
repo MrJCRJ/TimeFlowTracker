@@ -87,13 +87,15 @@ export class DriveFolderManager {
     });
 
     const folders = response.data.files;
-    
+
     if (folders && folders.length > 0) {
       // Se há múltiplas pastas, usar a mais antiga e logar um aviso
       if (folders.length > 1) {
-        console.warn(`[Drive] Encontradas ${folders.length} pastas '${DRIVE_FOLDER_NAME}'. Usando a mais antiga.`);
+        console.warn(
+          `[Drive] Encontradas ${folders.length} pastas '${DRIVE_FOLDER_NAME}'. Usando a mais antiga.`
+        );
       }
-      
+
       const folderId = folders[0].id;
       if (folderId) {
         return folderId;

@@ -2,7 +2,7 @@
  * Testes para o GoogleDriveService
  * Este arquivo testa a integração do serviço através de mocks
  * Os testes de unidade estão em folder-manager.test.ts e file-manager.test.ts
- * 
+ *
  * NOTA: Usamos jest.doMock para evitar problemas de hoisting
  */
 

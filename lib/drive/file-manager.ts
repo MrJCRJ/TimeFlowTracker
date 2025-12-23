@@ -114,7 +114,7 @@ export class DriveFileManager {
    */
   async deleteFile(fileName: string): Promise<boolean> {
     const fileId = await this.findFile(fileName);
-    
+
     if (!fileId) {
       return false;
     }

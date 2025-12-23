@@ -197,7 +197,7 @@ export function useAutoSync(config: Partial<SyncConfig> = {}) {
     if (!isRunning && wasRunningRef.current) {
       // Timer acabou de parar (mudou de true para false), sincronizar imediatamente
       console.log('[AutoSync] Timer parado, sincronizando. TimeEntries:', timeEntries.length);
-      
+
       // Pequeno delay para garantir que o state foi atualizado
       setTimeout(() => {
         syncToCloud();

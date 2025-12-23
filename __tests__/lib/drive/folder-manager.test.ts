@@ -28,7 +28,7 @@ describe('DriveFolderManager', () => {
   beforeEach(() => {
     // Limpar cache entre testes
     DriveFolderManager.clearCache();
-    
+
     // Criar mock do drive
     mockDrive = {
       files: {
@@ -37,7 +37,7 @@ describe('DriveFolderManager', () => {
         get: jest.fn(),
       },
     };
-    
+
     folderManager = new DriveFolderManager(mockDrive, 'test-token');
   });
 
@@ -95,7 +95,7 @@ describe('DriveFolderManager', () => {
 
     it('deve usar pasta mais antiga quando há duplicatas', async () => {
       const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
-      
+
       mockDrive.files.list.mockResolvedValueOnce({
         data: {
           files: [
@@ -109,10 +109,8 @@ describe('DriveFolderManager', () => {
       const folderId = await folderManager.getOrCreateFolder();
 
       expect(folderId).toBe('oldest-folder');
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Encontradas 3 pastas')
-      );
-      
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Encontradas 3 pastas'));
+
       consoleSpy.mockRestore();
     });
 
@@ -147,7 +145,7 @@ describe('DriveFolderManager', () => {
           files: [{ id: 'folder-2', name: 'TimeFlowTracker' }],
         },
       });
-      
+
       const newManager = new DriveFolderManager(mockDrive, 'test-token');
       const folderId = await newManager.getOrCreateFolder();
 
