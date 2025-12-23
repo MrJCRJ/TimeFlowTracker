@@ -77,82 +77,84 @@ export default function DashboardPage() {
   const topCategory = todayBreakdown[0];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold">Dashboard</h1>
-        <p className="mt-1 text-muted-foreground">Acompanhe seu tempo e produtividade</p>
+        <h1 className="text-2xl font-bold sm:text-3xl">Dashboard</h1>
+        <p className="mt-1 text-sm text-muted-foreground sm:text-base">
+          Acompanhe seu tempo e produtividade
+        </p>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {/* Stats Cards - 2x2 grid no mobile */}
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {/* Today Total */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Hoje</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
+        <Card className="col-span-1">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2">
+            <CardTitle className="text-xs font-medium sm:text-sm">Hoje</CardTitle>
+            <Clock className="h-3 w-3 text-muted-foreground sm:h-4 sm:w-4" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatDuration(todayStats.totalSeconds)}</div>
-            <p className="text-xs text-muted-foreground">{todayStats.entriesCount} registros</p>
+          <CardContent className="pt-0">
+            <div className="text-lg font-bold sm:text-2xl">{formatDuration(todayStats.totalSeconds)}</div>
+            <p className="text-[10px] text-muted-foreground sm:text-xs">{todayStats.entriesCount} registros</p>
           </CardContent>
         </Card>
 
         {/* Week Total */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Esta Semana</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+        <Card className="col-span-1">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2">
+            <CardTitle className="text-xs font-medium sm:text-sm">Esta Semana</CardTitle>
+            <TrendingUp className="h-3 w-3 text-muted-foreground sm:h-4 sm:w-4" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatDuration(weekStats.totalSeconds)}</div>
-            <p className="text-xs text-muted-foreground">{weekStats.entriesCount} registros</p>
+          <CardContent className="pt-0">
+            <div className="text-lg font-bold sm:text-2xl">{formatDuration(weekStats.totalSeconds)}</div>
+            <p className="text-[10px] text-muted-foreground sm:text-xs">{weekStats.entriesCount} registros</p>
           </CardContent>
         </Card>
 
         {/* Top Category */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Categoria Top</CardTitle>
-            <Zap className="h-4 w-4 text-muted-foreground" />
+        <Card className="col-span-1">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2">
+            <CardTitle className="text-xs font-medium sm:text-sm">Top</CardTitle>
+            <Zap className="h-3 w-3 text-muted-foreground sm:h-4 sm:w-4" />
           </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
+          <CardContent className="pt-0">
+            <div className="flex items-center gap-1 sm:gap-2">
               {topCategory ? (
                 <>
                   <div
-                    className="h-3 w-3 rounded-full"
+                    className="h-2 w-2 flex-shrink-0 rounded-full sm:h-3 sm:w-3"
                     style={{ backgroundColor: topCategory.categoryColor }}
                   />
-                  <span className="truncate text-2xl font-bold">{topCategory.categoryName}</span>
+                  <span className="truncate text-base font-bold sm:text-2xl">{topCategory.categoryName}</span>
                 </>
               ) : (
-                <span className="text-2xl font-bold text-muted-foreground">-</span>
+                <span className="text-base font-bold text-muted-foreground sm:text-2xl">-</span>
               )}
             </div>
-            <p className="text-xs text-muted-foreground">
-              {topCategory ? formatDuration(topCategory.totalSeconds) : 'Nenhum registro'}
+            <p className="text-[10px] text-muted-foreground sm:text-xs">
+              {topCategory ? formatDuration(topCategory.totalSeconds) : 'Sem dados'}
             </p>
           </CardContent>
         </Card>
 
         {/* Daily Goal */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Meta Diária</CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
+        <Card className="col-span-1">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2">
+            <CardTitle className="text-xs font-medium sm:text-sm">Meta</CardTitle>
+            <Target className="h-3 w-3 text-muted-foreground sm:h-4 sm:w-4" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
+          <CardContent className="pt-0">
+            <div className="text-lg font-bold sm:text-2xl">
               {Math.round((todayStats.totalSeconds / (8 * 3600)) * 100)}%
             </div>
-            <p className="text-xs text-muted-foreground">de 8 horas</p>
+            <p className="text-[10px] text-muted-foreground sm:text-xs">de 8 horas</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Charts Section */}
-      <div className="grid gap-6 md:grid-cols-2">
+      {/* Charts Section - Stack no mobile */}
+      <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
         {/* Today Distribution */}
         <TimeChart
           data={todayBreakdown}
@@ -165,31 +167,31 @@ export default function DashboardPage() {
 
         {/* Active Timer Card */}
         {isRunning && activeEntry && (
-          <Card className="border-primary/50 bg-primary/5">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+          <Card className="border-primary/50 bg-primary/5 timer-glow">
+            <CardHeader className="pb-2 sm:pb-4">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
                 <span className="h-2 w-2 animate-pulse rounded-full bg-primary" />
                 Timer Ativo
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 <div>
-                  <p className="text-sm text-muted-foreground">Categoria</p>
-                  <p className="text-lg font-medium">
+                  <p className="text-xs text-muted-foreground sm:text-sm">Categoria</p>
+                  <p className="text-base font-medium sm:text-lg">
                     {categories.find((c) => c.id === activeEntry.categoryId)?.name ??
                       'Desconhecida'}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Tempo Decorrido</p>
-                  <p className="font-mono text-4xl font-bold text-primary">
+                  <p className="text-xs text-muted-foreground sm:text-sm">Tempo Decorrido</p>
+                  <p className="timer-display-mobile text-primary sm:text-4xl">
                     {formatTime(elapsedSeconds)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Iniciado em</p>
-                  <p className="text-sm">
+                  <p className="text-xs text-muted-foreground sm:text-sm">Iniciado em</p>
+                  <p className="text-xs sm:text-sm">
                     {new Date(activeEntry.startTime).toLocaleTimeString('pt-BR')}
                   </p>
                 </div>

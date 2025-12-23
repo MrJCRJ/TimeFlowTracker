@@ -177,6 +177,46 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
+
+  /* Touch-friendly sizing */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Safe area insets for notch devices */
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  /* Mobile-optimized timer display */
+  .timer-display-mobile {
+    @apply text-3xl font-bold tabular-nums;
+  }
+
+  /* Swipe hint animation */
+  .swipe-hint {
+    animation: swipe-hint 2s ease-in-out infinite;
+  }
+
+  @keyframes swipe-hint {
+    0%, 100% { transform: translateX(0); }
+    50% { transform: translateX(10px); }
+  }
+
+  /* Pulse glow for active timer */
+  .timer-glow {
+    animation: timer-glow 2s ease-in-out infinite;
+  }
+
+  @keyframes timer-glow {
+    0%, 100% { box-shadow: 0 0 0 0 hsl(var(--primary) / 0.4); }
+    50% { box-shadow: 0 0 0 8px hsl(var(--primary) / 0); }
+  }
 }
 
 /* PWA Standalone Mode */
@@ -184,6 +224,36 @@
   body {
     -webkit-user-select: none;
     user-select: none;
+  }
+
+  /* Extra padding for PWA mode */
+  .timer-bar {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
+/* Touch device optimizations */
+@media (hover: none) {
+  /* Increase touch targets on touch devices */
+  .touch-device-btn {
+    min-height: 48px;
+    min-width: 48px;
+  }
+
+  /* Remove hover effects that don't work well on touch */
+  .group:hover .group-hover\:opacity-100 {
+    opacity: 1;
+  }
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
 

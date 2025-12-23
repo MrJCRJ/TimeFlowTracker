@@ -88,14 +88,20 @@ export default function CategoriesPage() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 sm:space-y-6">
+      {/* Header - Mobile optimizado */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Categorias</h1>
-          <p className="mt-1 text-muted-foreground">Gerencie suas categorias de tempo</p>
+          <h1 className="text-2xl font-bold sm:text-3xl">Categorias</h1>
+          <p className="mt-1 text-sm text-muted-foreground sm:text-base">
+            Gerencie suas categorias de tempo
+          </p>
         </div>
-        <Button onClick={() => setIsFormOpen(true)} disabled={isFormOpen}>
+        <Button 
+          onClick={() => setIsFormOpen(true)} 
+          disabled={isFormOpen}
+          className="w-full sm:w-auto touch-target"
+        >
           <Plus className="mr-2 h-4 w-4" />
           Nova Categoria
         </Button>

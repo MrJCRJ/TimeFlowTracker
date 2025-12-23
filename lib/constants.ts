@@ -30,6 +30,7 @@ export const API_ROUTES = {
   AUTH: '/api/auth',
   DRIVE_SYNC: '/api/drive/sync',
   DRIVE_BACKUP: '/api/drive/backup',
+  DRIVE_ACTIVE_TIMER: '/api/drive/active-timer',
   TIMER_ACTIVE: '/api/timer/active',
   TIMER_START: '/api/timer/start',
   TIMER_STOP: '/api/timer/stop',

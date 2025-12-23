@@ -4,13 +4,13 @@ import React, { useState, useMemo } from 'react';
 import { useCategoryStore } from '@/stores/categoryStore';
 import { useTimerStore } from '@/stores/timerStore';
 import { TimeChart } from '@/components/analytics/TimeChart';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { formatDuration, isToday, isThisWeek, isThisMonth } from '@/lib/utils';
-import { Calendar, Clock, TrendingUp } from 'lucide-react';
+import { PeriodSelector, TimePeriod } from '@/components/analytics/PeriodSelector';
+import { AnalyticsSummaryCards } from '@/components/analytics/AnalyticsSummaryCards';
+import { CategoryBreakdownList } from '@/components/analytics/CategoryBreakdownList';
+import { Card, CardContent } from '@/components/ui/card';
+import { isToday, isThisWeek, isThisMonth } from '@/lib/utils';
+import { Clock } from 'lucide-react';
 import type { CategoryTimeBreakdown, TimeEntry } from '@/types';
-
-type TimePeriod = 'today' | 'week' | 'month' | 'custom';
 
 export default function AnalyticsPage() {
   const { categories } = useCategoryStore();
@@ -137,133 +137,41 @@ export default function AnalyticsPage() {
   }, [period, customStartDate, customEndDate]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+      <div className="flex flex-col justify-between gap-3 sm:gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-3xl font-bold">Análise</h1>
-          <p className="mt-1 text-muted-foreground">Visualize seu uso do tempo</p>
-        </div>
-
-        {/* Period Selector */}
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant={period === 'today' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setPeriod('today')}
-          >
-            Hoje
-          </Button>
-          <Button
-            variant={period === 'week' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setPeriod('week')}
-          >
-            Semana
-          </Button>
-          <Button
-            variant={period === 'month' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setPeriod('month')}
-          >
-            Mês
-          </Button>
-          <Button
-            variant={period === 'custom' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setPeriod('custom')}
-          >
-            <Calendar className="mr-1 h-4 w-4" />
-            Personalizado
-          </Button>
+          <h1 className="text-2xl sm:text-3xl font-bold">Análise</h1>
+          <p className="mt-1 text-sm sm:text-base text-muted-foreground">
+            Visualize seu uso do tempo
+          </p>
         </div>
       </div>
 
-      {/* Custom Date Range */}
-      {period === 'custom' && (
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex flex-wrap items-end gap-4">
-              <div>
-                <label htmlFor="startDate" className="mb-1 block text-sm font-medium">
-                  Data Inicial
-                </label>
-                <input
-                  id="startDate"
-                  type="date"
-                  value={customStartDate}
-                  onChange={(e) => setCustomStartDate(e.target.value)}
-                  className="rounded-md border bg-background px-3 py-2"
-                />
-              </div>
-              <div>
-                <label htmlFor="endDate" className="mb-1 block text-sm font-medium">
-                  Data Final
-                </label>
-                <input
-                  id="endDate"
-                  type="date"
-                  value={customEndDate}
-                  onChange={(e) => setCustomEndDate(e.target.value)}
-                  className="rounded-md border bg-background px-3 py-2"
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* Period Selector */}
+      <PeriodSelector
+        period={period}
+        onPeriodChange={setPeriod}
+        customStartDate={customStartDate}
+        customEndDate={customEndDate}
+        onCustomStartDateChange={setCustomStartDate}
+        onCustomEndDateChange={setCustomEndDate}
+      />
 
       {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Tempo Total</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-muted-foreground" />
-              <span className="text-2xl font-bold">{formatDuration(totalSeconds)}</span>
-            </div>
-            <p className="mt-1 text-xs text-muted-foreground">{periodLabel}</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Média Diária</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-muted-foreground" />
-              <span className="text-2xl font-bold">
-                {formatDuration(Math.round(averagePerDay))}
-              </span>
-            </div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {dailyBreakdown.length} dias com registros
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Categorias Usadas</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <span className="text-2xl font-bold">{categoryBreakdown.length}</span>
-              <span className="text-muted-foreground">de {categories.length}</span>
-            </div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {filteredEntries.length} registros totais
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <AnalyticsSummaryCards
+        totalSeconds={totalSeconds}
+        averagePerDay={averagePerDay}
+        daysWithRecords={dailyBreakdown.length}
+        categoriesUsed={categoryBreakdown.length}
+        totalCategories={categories.length}
+        totalEntries={filteredEntries.length}
+        periodLabel={periodLabel}
+      />
 
       {/* Charts */}
       {filteredEntries.length > 0 ? (
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
           {/* Pie Chart */}
           <TimeChart
             data={categoryBreakdown}
@@ -286,10 +194,15 @@ export default function AnalyticsPage() {
         </div>
       ) : (
         <Card>
-          <CardContent className="py-16 text-center">
-            <Clock className="mx-auto mb-4 h-16 w-16 text-muted-foreground opacity-50" />
-            <h3 className="mb-2 text-xl font-medium">Nenhum dado para este período</h3>
-            <p className="mx-auto max-w-md text-muted-foreground">
+          <CardContent className="py-12 sm:py-16 text-center">
+            <Clock 
+              className="mx-auto mb-4 h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground opacity-50" 
+              aria-hidden="true"
+            />
+            <h3 className="mb-2 text-lg sm:text-xl font-medium">
+              Nenhum dado para este período
+            </h3>
+            <p className="mx-auto max-w-md text-sm sm:text-base text-muted-foreground">
               {period === 'custom' && (!customStartDate || !customEndDate)
                 ? 'Selecione as datas inicial e final para visualizar os dados.'
                 : 'Comece a rastrear seu tempo para ver as análises aqui.'}
@@ -299,46 +212,7 @@ export default function AnalyticsPage() {
       )}
 
       {/* Detailed Category List */}
-      {categoryBreakdown.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Detalhamento por Categoria</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {categoryBreakdown.map((item, index) => (
-                <div key={item.categoryId}>
-                  <div className="mb-2 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className="w-6 text-lg font-medium text-muted-foreground">
-                        #{index + 1}
-                      </span>
-                      <div
-                        className="h-3 w-3 rounded-full"
-                        style={{ backgroundColor: item.categoryColor }}
-                      />
-                      <span className="font-medium">{item.categoryName}</span>
-                    </div>
-                    <div className="text-right">
-                      <span className="font-bold">{formatDuration(item.totalSeconds)}</span>
-                      <span className="ml-2 text-muted-foreground">({item.percentage}%)</span>
-                    </div>
-                  </div>
-                  <div className="ml-9 h-2 overflow-hidden rounded-full bg-muted">
-                    <div
-                      className="h-full rounded-full transition-all duration-500"
-                      style={{
-                        width: `${item.percentage}%`,
-                        backgroundColor: item.categoryColor,
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <CategoryBreakdownList breakdown={categoryBreakdown} />
     </div>
   );
 }
