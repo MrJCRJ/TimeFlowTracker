@@ -9,7 +9,7 @@ export function TimerSync() {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Hook de auto-sync
-  useAutoSync({ autoSync: true, syncInterval: 5, showNotifications: false });
+  useAutoSync({ autoSync: true, syncIntervalMinutes: 5, showNotifications: false });
 
   // Atualizar tempo decorrido a cada segundo quando timer está rodando
   useEffect(() => {
