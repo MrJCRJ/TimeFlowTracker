@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useSync } from './header/useSync';
 import { SyncButton } from './header/SyncButton';
 import { UserAvatar } from './header/UserAvatar';
-import { Navigation } from './header/Navigation';
 import { MobileMenu } from './header/MobileMenu';
 import { NotificationsPanel } from './header/NotificationsPanel';
 import type { AuthUser } from '@/lib/auth';
@@ -31,9 +30,6 @@ export function Header({ user }: HeaderProps) {
             </div>
             <span className="font-semibold">TimeFlow</span>
           </Link>
-
-          {/* Desktop Navigation */}
-          <Navigation className="hidden lg:flex" />
 
           {/* Actions */}
           <div className="flex items-center gap-2">

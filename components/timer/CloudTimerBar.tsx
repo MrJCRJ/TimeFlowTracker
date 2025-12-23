@@ -7,6 +7,7 @@ import { cn, formatTime, diffInSeconds, now } from '@/lib/utils';
 import { useTimerStore } from '@/stores/timerStore';
 import { useCategoryStore } from '@/stores/categoryStore';
 import { useActiveTimerDrive } from '../../hooks/useActiveTimerDrive';
+import { useAutoSync } from '../../hooks/useAutoSync';
 import { TIMER_UPDATE_INTERVAL } from '@/lib/constants';
 import type { Category, ActiveTimerRecord, TimeEntry } from '@/types';
 import {
@@ -61,19 +62,35 @@ export function CloudTimerBar({ userId, className, isLoading = false }: CloudTim
   const { categories, initializeDefaults } = useCategoryStore();
   const timerStore = useTimerStore();
 
-  // Callbacks memoizados para evitar re-renders desnecessários
-  const handleTimerStopped = useCallback(
-    (entry: TimeEntry) => {
-      // Quando timer é parado, adiciona ao store local também
-      timerStore.addTimeEntry(entry);
-    },
-    [timerStore]
-  );
-
   const handleRemoteTimerFound = useCallback((timer: ActiveTimerRecord) => {
     // Notificar quando encontrar timer de outro dispositivo
     console.log(`[CloudTimerBar] Timer encontrado de: ${timer.deviceName}`);
   }, []);
+
+  // Sincronização automática com Google Drive
+  const { syncToCloud } = useAutoSync({
+    autoSync: true,
+    syncIntervalMinutes: 2, // Sync a cada 2 minutos
+    showNotifications: false,
+    restoreActiveTimer: true,
+  });
+
+  // Callbacks memoizados para evitar re-renders desnecessários
+  const handleTimerStopped = useCallback(
+    async (entry: TimeEntry) => {
+      // Quando timer é parado, adiciona ao store local também
+      timerStore.addTimeEntry(entry);
+
+      // Força sincronização imediata com Google Drive
+      try {
+        await syncToCloud();
+        console.log('[CloudTimerBar] Time entry sincronizado com Google Drive');
+      } catch (error) {
+        console.error('[CloudTimerBar] Erro ao sincronizar time entry:', error);
+      }
+    },
+    [timerStore, syncToCloud]
+  );
 
   // Opções do hook memoizadas para evitar re-renders
   const activeTimerDriveOptions = useMemo(
