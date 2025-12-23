@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useSync } from './header/useSync';
 import { SyncButton } from './header/SyncButton';
 import { UserAvatar } from './header/UserAvatar';
-import { MobileMenu } from './header/MobileMenu';
 import { NotificationsPanel } from './header/NotificationsPanel';
 import type { AuthUser } from '@/lib/auth';
 
@@ -20,11 +19,8 @@ export function Header({ user }: HeaderProps) {
     <>
       <header className="sticky top-0 z-30 h-16 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
         <div className="flex h-full items-center justify-between px-4 md:px-6">
-          {/* Mobile menu button */}
-          <MobileMenu />
-
-          {/* Logo for mobile */}
-          <Link href="/" className="flex items-center gap-2 lg:hidden">
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
               <span className="text-sm font-bold text-primary-foreground">TF</span>
             </div>
