@@ -1,251 +1,278 @@
 'use client';
 
-import { useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback, useRef, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useTimerStore } from '@/stores/timerStore';
 import { useCategoryStore } from '@/stores/categoryStore';
 import { useNotificationStore } from '@/stores/notificationStore';
+import { SyncManager, type SyncResult } from '@/lib/sync';
 
+/**
+ * Configurações do hook de sincronização
+ */
 interface SyncConfig {
   autoSync: boolean;
-  syncInterval: number; // em minutos
-  showNotifications?: boolean; // Se deve mostrar notificações automáticas
-  restoreActiveTimer?: boolean; // Se deve restaurar timer ativo da nuvem
+  syncIntervalMinutes: number; // Intervalo em minutos para sync automático
+  debounceMs: number; // Tempo de debounce para mudanças
+  throttleMs: number; // Intervalo mínimo entre syncs
+  showNotifications: boolean;
+  restoreActiveTimer: boolean;
+  // Injeção de dependência para testes
+  syncManagerInstance?: SyncManager | null;
 }
 
 const DEFAULT_CONFIG: SyncConfig = {
   autoSync: true,
-  syncInterval: 5, // 5 minutos
-  showNotifications: false, // Por padrão, não mostrar notificações automáticas
-  restoreActiveTimer: true, // Por padrão, restaurar timer ativo
+  syncIntervalMinutes: 5, // Sync automático a cada 5 minutos
+  debounceMs: 5000, // 5 segundos de debounce
+  throttleMs: 30000, // Mínimo 30 segundos entre syncs
+  showNotifications: false,
+  restoreActiveTimer: true,
+  syncManagerInstance: null,
 };
 
+/**
+ * Hook para sincronização automática inteligente
+ *
+ * Usa o SyncManager para:
+ * - Evitar requests desnecessários com hash de dados
+ * - Debounce para agrupar mudanças
+ * - Throttle para limitar frequência
+ * - Suporte a múltiplos dispositivos
+ */
 export function useAutoSync(config: Partial<SyncConfig> = {}) {
+  const mergedConfig = { ...DEFAULT_CONFIG, ...config };
   const {
     autoSync,
-    syncInterval,
+    syncIntervalMinutes,
+    debounceMs,
+    throttleMs,
     showNotifications,
     restoreActiveTimer: shouldRestoreTimer,
-  } = { ...DEFAULT_CONFIG, ...config };
+    syncManagerInstance,
+  } = mergedConfig;
+
   const { data: session } = useSession();
   const { addNotification } = useNotificationStore();
 
-  const { timeEntries, activeEntry, isRunning, setTimeEntries, restoreActiveTimer } =
-    useTimerStore();
-  const { categories, setCategories } = useCategoryStore();
+  // Stores
+  const timeEntries = useTimerStore((s) => s.timeEntries);
+  const activeEntry = useTimerStore((s) => s.activeEntry);
+  const isRunning = useTimerStore((s) => s.isRunning);
+  const setTimeEntries = useTimerStore((s) => s.setTimeEntries);
+  const restoreActiveTimer = useTimerStore((s) => s.restoreActiveTimer);
+  const categories = useCategoryStore((s) => s.categories);
+  const setCategories = useCategoryStore((s) => s.setCategories);
 
-  const lastSyncRef = useRef<Date | null>(null);
-  const isSyncingRef = useRef(false);
-  const wasRunningRef = useRef(false); // Controle para evitar restaurar timer logo após parar
-  const initialLoadDoneRef = useRef(false); // Controle para saber se já fez o carregamento inicial
+  // Estado local
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSync, setLastSync] = useState<Date | null>(null);
 
-  // Função para fazer backup no Google Drive
-  const syncToCloud = useCallback(async () => {
-    if (!session?.accessToken || isSyncingRef.current) return false;
+  // Refs para controle
+  const syncManagerRef = useRef<SyncManager | null>(syncManagerInstance || null);
+  const initialLoadDoneRef = useRef(false);
+  const wasRunningRef = useRef(false);
+  const prevDataHashRef = useRef<string>('');
 
-    isSyncingRef.current = true;
-
-    try {
-      const response = await fetch('/api/drive/backup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          categories,
-          timeEntries,
-          preferences: {
-            userId: session.user.id,
-            workHours: { start: '09:00', end: '18:00' },
-            dailyGoals: {},
-            theme: 'system',
-            notifications: true,
-            autoSync: true,
-            syncInterval: 5,
-            updatedAt: new Date().toISOString(),
-            ...(isRunning && activeEntry ? { activeTimer: activeEntry } : {}),
-          },
-          syncedAt: new Date().toISOString(),
-        }),
+  // Inicializa SyncManager
+  useEffect(() => {
+    // Se foi injetada uma instância para testes, usa ela
+    if (syncManagerInstance) {
+      syncManagerRef.current = syncManagerInstance;
+      return;
+    }
+    
+    if (!syncManagerRef.current) {
+      syncManagerRef.current = new SyncManager({
+        debounceMs,
+        throttleMs,
+        syncIntervalMs: syncIntervalMinutes * 60 * 1000,
       });
-
-      if (response.ok) {
-        lastSyncRef.current = new Date();
-        return true;
-      }
-
-      return false;
-    } catch (error) {
-      console.error('Erro ao sincronizar:', error);
-      return false;
-    } finally {
-      isSyncingRef.current = false;
     }
-  }, [session, categories, timeEntries, activeEntry, isRunning]);
 
-  // Função para carregar do Google Drive
-  const syncFromCloud = useCallback(async () => {
-    if (!session?.accessToken || isSyncingRef.current) return false;
-
-    isSyncingRef.current = true;
-
-    try {
-      const response = await fetch('/api/drive/sync');
-
-      if (!response.ok) {
-        return false;
+    return () => {
+      // Não cancela se for instância injetada (deixa para o teste controlar)
+      if (!syncManagerInstance) {
+        syncManagerRef.current?.cancel();
       }
+    };
+  }, [debounceMs, throttleMs, syncIntervalMinutes, syncManagerInstance]);
 
-      const data = await response.json();
+  // Configura SyncManager com callbacks
+  useEffect(() => {
+    if (!syncManagerRef.current) return;
 
-      if (data.success && data.data) {
-        // Estratégia de sincronização inteligente:
-        // - Se Drive tem dados, usar eles (prioridade para Drive)
-        // - Se Drive está vazio mas temos dados locais, manter dados locais
-        // - Se ambos têm dados, Drive ganha
-
-        const hasDriveCategories = data.data.categories && data.data.categories.length > 0;
-        const hasDriveTimeEntries = data.data.timeEntries && data.data.timeEntries.length > 0;
-        const hasLocalCategories = categories.length > 0;
-        const hasLocalTimeEntries = timeEntries.length > 0;
-
-        // Só sobrescrever se Drive tem dados OU se é a primeira sincronização
-        if (hasDriveCategories || !hasLocalCategories) {
-          setCategories(data.data.categories || []);
+    syncManagerRef.current.configure({
+      getAccessToken: () => session?.accessToken || null,
+      getLocalData: () => ({
+        categories,
+        timeEntries,
+        activeTimerId: activeEntry?.id || null,
+      }),
+      setLocalData: ({ categories: newCategories, timeEntries: newEntries }) => {
+        if (newCategories.length > 0 || categories.length === 0) {
+          setCategories(newCategories);
         }
-        if (hasDriveTimeEntries || !hasLocalTimeEntries) {
-          setTimeEntries(data.data.timeEntries || []);
+        if (newEntries.length > 0 || timeEntries.length === 0) {
+          setTimeEntries(newEntries);
         }
-
-        // Restaurar timer ativo da nuvem APENAS no carregamento inicial
-        // e se não havia timer rodando localmente antes
-        if (
-          shouldRestoreTimer &&
-          data.data.preferences?.activeTimer &&
-          !isRunning &&
-          !wasRunningRef.current && // Não restaurar se o timer acabou de ser parado
-          !initialLoadDoneRef.current // Apenas no carregamento inicial
-        ) {
-          restoreActiveTimer(data.data.preferences.activeTimer);
+      },
+      onSyncComplete: (result: SyncResult) => {
+        setIsSyncing(false);
+        if (result.success && result.direction !== 'none') {
+          setLastSync(new Date());
         }
+      },
+    });
+  }, [
+    session?.accessToken,
+    categories,
+    timeEntries,
+    activeEntry?.id,
+    setCategories,
+    setTimeEntries,
+  ]);
 
-        // Marcar que o carregamento inicial foi feito
-        initialLoadDoneRef.current = true;
-        lastSyncRef.current = new Date();
-        return true;
+  // Função para sincronizar para a nuvem
+  const syncToCloud = useCallback(async (): Promise<boolean> => {
+    if (!syncManagerRef.current || !session?.accessToken) return false;
+
+    setIsSyncing(true);
+    const result = await syncManagerRef.current.syncToCloud();
+    return result.success;
+  }, [session?.accessToken]);
+
+  // Função para sincronizar da nuvem
+  const syncFromCloud = useCallback(async (): Promise<boolean> => {
+    if (!syncManagerRef.current || !session?.accessToken) return false;
+
+    setIsSyncing(true);
+    const result = await syncManagerRef.current.syncFromCloud();
+
+    // Restaurar timer ativo se configurado e é carregamento inicial
+    if (
+      result.success &&
+      shouldRestoreTimer &&
+      !initialLoadDoneRef.current &&
+      !isRunning &&
+      !wasRunningRef.current
+    ) {
+      // Buscar dados de preferências para restaurar timer
+      try {
+        const response = await fetch('/api/drive/sync');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.data?.preferences?.activeTimer) {
+            restoreActiveTimer(data.data.preferences.activeTimer);
+          }
+        }
+      } catch (error) {
+        console.error('[useAutoSync] Erro ao restaurar timer:', error);
       }
-
-      return false;
-    } catch (error) {
-      console.error('Erro ao carregar dados da nuvem:', error);
-      return false;
-    } finally {
-      isSyncingRef.current = false;
     }
-  }, [session, setCategories, setTimeEntries, shouldRestoreTimer, isRunning, restoreActiveTimer]);
 
-  // Sincronização automática periódica
+    initialLoadDoneRef.current = true;
+    return result.success;
+  }, [session?.accessToken, shouldRestoreTimer, isRunning, restoreActiveTimer]);
+
+  // Sincronização inicial ao carregar
+  useEffect(() => {
+    if (!autoSync || !session?.accessToken || initialLoadDoneRef.current) return;
+
+    syncFromCloud().then((success) => {
+      if (success && showNotifications) {
+        addNotification({
+          type: 'info',
+          title: 'Dados Sincronizados',
+          message: 'Seus dados foram carregados do Google Drive',
+        });
+      }
+    });
+  }, [autoSync, session?.accessToken, syncFromCloud, showNotifications, addNotification]);
+
+  // Sync automático periódico
   useEffect(() => {
     if (!autoSync || !session?.accessToken) return;
 
-    const intervalMs = syncInterval * 60 * 1000;
+    const intervalMs = syncIntervalMinutes * 60 * 1000;
 
-    const syncTimer = setInterval(async () => {
-      const success = await syncToCloud();
-      if (success) {
-        console.log('Auto-sync realizado com sucesso');
-      }
+    const syncTimer = setInterval(() => {
+      console.log('[useAutoSync] Sync automático periódico');
+      syncManagerRef.current?.scheduleSync(false);
     }, intervalMs);
 
-    // Sincronização inicial ao carregar
-    syncFromCloud().then((success) => {
-      if (success) {
-        console.log('Dados carregados do Google Drive na inicialização');
-        // Só mostrar notificação se configurado para mostrar
-        if (showNotifications) {
-          addNotification({
-            type: 'info',
-            title: 'Dados Sincronizados',
-            message: 'Seus dados foram carregados do Google Drive',
-          });
-        }
-      }
+    return () => clearInterval(syncTimer);
+  }, [autoSync, session?.accessToken, syncIntervalMinutes]);
+
+  // Detectar mudanças nos dados e agendar sync
+  useEffect(() => {
+    if (!autoSync || !session?.accessToken || !syncManagerRef.current) return;
+
+    // Gera hash simples para detectar mudanças
+    const currentHash = JSON.stringify({
+      c: categories.length,
+      t: timeEntries.length,
+      a: activeEntry?.id || '',
     });
 
-    return () => clearInterval(syncTimer);
-  }, [autoSync, syncInterval, session, syncToCloud, syncFromCloud, addNotification]);
+    // Só agenda sync se dados realmente mudaram
+    if (currentHash !== prevDataHashRef.current) {
+      prevDataHashRef.current = currentHash;
 
-  // Controlar quando o timer muda de estado para evitar restaurações indevidas
+      // Usa o SyncManager para agendar com debounce
+      syncManagerRef.current.scheduleSync(false);
+    }
+  }, [categories, timeEntries, activeEntry?.id, autoSync, session?.accessToken]);
+
+  // Controlar mudança de estado do timer
   useEffect(() => {
-    // Atualizar ref para saber se o timer estava rodando antes
+    const previouslyRunning = wasRunningRef.current;
     wasRunningRef.current = isRunning;
-  }, [isRunning]);
 
-  // Sincronizar quando dados locais mudarem (com debounce para evitar syncs excessivas)
-  useEffect(() => {
-    if (!session?.accessToken || !autoSync) return;
-
-    const timeoutId = setTimeout(() => {
-      syncToCloud();
-    }, 2000); // Aguardar 2 segundos após mudança para sincronizar
-
-    return () => clearTimeout(timeoutId);
-  }, [categories, timeEntries, session?.accessToken, autoSync, syncToCloud]);
-
-  // Sincronizar quando o timer parar
-  useEffect(() => {
-    if (!isRunning && wasRunningRef.current) {
-      // Timer acabou de parar (mudou de true para false), sincronizar imediatamente
-      console.log('[AutoSync] Timer parado, sincronizando. TimeEntries:', timeEntries.length);
-
+    // Timer acabou de parar
+    if (!isRunning && previouslyRunning) {
+      console.log('[useAutoSync] Timer parado, agendando sync imediato');
       // Pequeno delay para garantir que o state foi atualizado
       setTimeout(() => {
-        syncToCloud();
-        // Após sincronização, resetar o flag
-        setTimeout(() => {
-          wasRunningRef.current = false;
-        }, 3000); // 3 segundos de proteção
-      }, 500);
+        syncManagerRef.current?.scheduleSync(true);
+      }, 1000);
     }
-  }, [isRunning, syncToCloud, timeEntries]);
 
-  // Sincronizar quando o timer iniciar
-  useEffect(() => {
-    if (isRunning && session?.accessToken) {
-      // Timer acabou de iniciar, sincronizar para salvar o estado ativo
-      // Pequeno delay para não bloquear a UI
-      setTimeout(() => syncToCloud(), 500);
+    // Timer acabou de iniciar
+    if (isRunning && !previouslyRunning) {
+      console.log('[useAutoSync] Timer iniciado, agendando sync');
+      setTimeout(() => {
+        syncManagerRef.current?.scheduleSync(true);
+      }, 1000);
     }
-  }, [isRunning, session?.accessToken, syncToCloud]);
+  }, [isRunning]);
 
-  // Sincronizar antes de fechar a página
+  // Sincronizar ao fechar/esconder página
   useEffect(() => {
+    if (!session?.accessToken) return;
+
     const handleBeforeUnload = () => {
-      if (session?.accessToken) {
-        // Usar sendBeacon para sincronização assíncrona
-        const data = JSON.stringify({
-          categories,
-          timeEntries,
-          preferences: {
-            userId: session.user.id,
-            workHours: { start: '09:00', end: '18:00' },
-            dailyGoals: {},
-            theme: 'system',
-            notifications: true,
-            autoSync: true,
-            syncInterval: 5,
-            updatedAt: new Date().toISOString(),
-            ...(isRunning && activeEntry ? { activeTimer: activeEntry } : {}),
-          },
-          syncedAt: new Date().toISOString(),
-        });
+      // Usa sendBeacon para sync assíncrono
+      const data = JSON.stringify({
+        categories,
+        timeEntries,
+        preferences: {
+          updatedAt: new Date().toISOString(),
+          ...(isRunning && activeEntry ? { activeTimer: activeEntry } : {}),
+        },
+        syncedAt: new Date().toISOString(),
+      });
 
-        navigator.sendBeacon('/api/drive/backup', data);
-      }
+      navigator.sendBeacon('/api/drive/backup', data);
     };
 
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'hidden' && session?.accessToken) {
+      // Só sincroniza se página ficar oculta E tiver mudanças pendentes
+      if (
+        document.visibilityState === 'hidden' &&
+        syncManagerRef.current?.getStatus().hasLocalChanges
+      ) {
+        console.log('[useAutoSync] Página oculta, sincronizando mudanças pendentes');
         syncToCloud();
       }
     };
@@ -257,12 +284,13 @@ export function useAutoSync(config: Partial<SyncConfig> = {}) {
       window.removeEventListener('beforeunload', handleBeforeUnload);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [session, categories, timeEntries, activeEntry, isRunning, syncToCloud]);
+  }, [session?.accessToken, categories, timeEntries, activeEntry, isRunning, syncToCloud]);
 
   return {
     syncToCloud,
     syncFromCloud,
-    lastSync: lastSyncRef.current,
-    isSyncing: isSyncingRef.current,
+    lastSync,
+    isSyncing,
+    getStatus: () => syncManagerRef.current?.getStatus() || null,
   };
 }
