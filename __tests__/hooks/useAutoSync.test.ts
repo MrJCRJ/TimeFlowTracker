@@ -39,6 +39,7 @@ describe('useAutoSync', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    (global.fetch as jest.Mock).mockClear();
     mockUseSession.mockReturnValue({ data: mockSession });
     mockUseTimerStore.mockReturnValue({
       timeEntries: [],
@@ -53,10 +54,8 @@ describe('useAutoSync', () => {
     mockUseNotificationStore.mockReturnValue({
       addNotification: jest.fn(),
     });
-    (global.fetch as jest.Mock).mockResolvedValue({
-      ok: true,
-      json: jest.fn().mockResolvedValue({ success: true }),
-    });
+    // Mock padrão para fetch - erro de rede para evitar chamadas reais
+    (global.fetch as jest.Mock).mockRejectedValue(new Error('Network error'));
   });
 
   it('deve retornar objeto com métodos de sincronização', () => {

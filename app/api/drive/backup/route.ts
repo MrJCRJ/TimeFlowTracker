@@ -69,9 +69,12 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       updatedAt: syncedAt || new Date().toISOString(),
     };
 
-    // Incluir timer ativo nas preferências se existir
-    if (activeTimer) {
+    // Incluir timer ativo nas preferências APENAS se existir e não for null
+    if (activeTimer && activeTimer !== null) {
       userPreferences.activeTimer = activeTimer;
+    } else {
+      // Remover activeTimer das preferências se não existir
+      delete userPreferences.activeTimer;
     }
 
     const result = await driveService.syncAll(categories || [], timeEntries || [], userPreferences);

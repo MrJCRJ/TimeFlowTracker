@@ -163,8 +163,8 @@ export function useAutoSync(config: Partial<SyncConfig> = {}) {
 
   // Sincronizar quando o timer parar
   useEffect(() => {
-    if (!isRunning && lastSyncRef.current) {
-      // Timer acabou de parar, sincronizar imediatamente
+    if (!isRunning && wasRunningRef.current) {
+      // Timer acabou de parar (mudou de true para false), sincronizar imediatamente
       // Marcar que estava rodando para não restaurar da nuvem
       wasRunningRef.current = true;
       syncToCloud();
@@ -174,7 +174,7 @@ export function useAutoSync(config: Partial<SyncConfig> = {}) {
         wasRunningRef.current = false;
       }, 5000); // 5 segundos de proteção
     }
-  }, [isRunning, syncToCloud]);
+  }, [isRunning, syncToCloud, activeEntry, timeEntries]);
 
   // Sincronizar quando o timer iniciar
   useEffect(() => {
