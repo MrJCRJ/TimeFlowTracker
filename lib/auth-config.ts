@@ -125,7 +125,12 @@ export const authOptions: NextAuthOptions = {
         session.accessToken = token.accessToken as string | undefined;
         // Usar dados do usuário do token em vez de session.user
         if (token.user && typeof token.user === 'object') {
-          const userData = token.user as { id?: string; email?: string; name?: string; image?: string };
+          const userData = token.user as {
+            id?: string;
+            email?: string;
+            name?: string;
+            image?: string;
+          };
           session.user = {
             id: token.sub ?? userData.id ?? '',
             email: userData.email ?? session.user?.email ?? '',
