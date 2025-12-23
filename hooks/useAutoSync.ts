@@ -196,16 +196,18 @@ export function useAutoSync(config: Partial<SyncConfig> = {}) {
   useEffect(() => {
     if (!isRunning && wasRunningRef.current) {
       // Timer acabou de parar (mudou de true para false), sincronizar imediatamente
-      // Marcar que estava rodando para não restaurar da nuvem
-      wasRunningRef.current = true;
-      syncToCloud();
-
-      // Após um tempo, resetar o flag para permitir restaurações futuras
+      console.log('[AutoSync] Timer parado, sincronizando. TimeEntries:', timeEntries.length);
+      
+      // Pequeno delay para garantir que o state foi atualizado
       setTimeout(() => {
-        wasRunningRef.current = false;
-      }, 5000); // 5 segundos de proteção
+        syncToCloud();
+        // Após sincronização, resetar o flag
+        setTimeout(() => {
+          wasRunningRef.current = false;
+        }, 3000); // 3 segundos de proteção
+      }, 500);
     }
-  }, [isRunning, syncToCloud, activeEntry, timeEntries]);
+  }, [isRunning, syncToCloud, timeEntries]);
 
   // Sincronizar quando o timer iniciar
   useEffect(() => {

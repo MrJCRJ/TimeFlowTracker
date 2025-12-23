@@ -81,13 +81,61 @@ export default function SettingsPage() {
     if (confirm('Tem certeza que deseja limpar todos os dados? Esta ação não pode ser desfeita.')) {
       setIsClearing(true);
       try {
+        // Resetar stores primeiro
         resetCategories();
         resetTimer();
-        localStorage.clear();
-        alert('Dados limpos com sucesso!');
+        
+        // Limpar localStorage específico do TimeFlow
+        const keysToRemove = [
+          'timer-storage',
+          'timeflow_categories', 
+          'timeflow_timer_state',
+          'timeflow_time_entries',
+          'timeflow_preferences',
+          'timeflow_sync_metadata',
+          'timeflow_theme'
+        ];
+        
+        keysToRemove.forEach(key => {
+          localStorage.removeItem(key);
+        });
+        
+        // Também limpar dados do Drive se estiver conectado
+        if (session?.accessToken) {
+          try {
+            // Usar API ao invés de importar módulo diretamente (evita problemas de build)
+            const response = await fetch('/api/drive/clear', {
+              method: 'DELETE',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            });
+            
+            if (!response.ok) {
+              console.warn('Não foi possível limpar dados do Drive');
+            }
+          } catch (driveError) {
+            console.warn('Não foi possível limpar dados do Drive:', driveError);
+          }
+        }
+        
+        addNotification({
+          type: 'success',
+          title: 'Dados limpos',
+          message: 'Todos os dados foram removidos com sucesso.',
+        });
+        
+        // Recarregar a página para garantir que tudo foi limpo
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
       } catch (error) {
         console.error('Erro ao limpar dados:', error);
-        alert('Erro ao limpar dados');
+        addNotification({
+          type: 'error',
+          title: 'Erro ao limpar dados',
+          message: 'Ocorreu um erro ao limpar os dados. Tente novamente.',
+        });
       } finally {
         setIsClearing(false);
       }
