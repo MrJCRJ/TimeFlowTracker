@@ -139,6 +139,15 @@ export function useAutoSync(config: Partial<SyncConfig> = {}) {
     }
   }, [isRunning, syncToCloud]);
 
+  // Sincronizar quando o timer iniciar
+  useEffect(() => {
+    if (isRunning && session?.accessToken) {
+      // Timer acabou de iniciar, sincronizar para salvar o estado ativo
+      // Pequeno delay para não bloquear a UI
+      setTimeout(() => syncToCloud(), 500);
+    }
+  }, [isRunning, session?.accessToken, syncToCloud]);
+
   // Sincronizar antes de fechar a página
   useEffect(() => {
     const handleBeforeUnload = () => {

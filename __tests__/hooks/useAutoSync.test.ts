@@ -173,4 +173,39 @@ describe('useAutoSync', () => {
     expect(mockSetCategories).toHaveBeenCalledWith([{ id: 'cat-1', name: 'Test Category' }]);
     expect(mockSetTimeEntries).toHaveBeenCalledWith([{ id: 'entry-1', categoryId: 'cat-1' }]);
   });
+
+  it('deve sincronizar quando o timer iniciar', async () => {
+    jest.useFakeTimers();
+
+    // Mock do timer store inicialmente com timer parado
+    const mockTimerStore = {
+      timeEntries: [],
+      activeEntry: null,
+      isRunning: false,
+      setTimeEntries: jest.fn(),
+    };
+
+    mockUseTimerStore.mockReturnValue(mockTimerStore);
+
+    // Mock da resposta de backup
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: jest.fn().mockResolvedValue({ success: true }),
+    });
+
+    renderHook(() => useAutoSync({ autoSync: false }));
+
+    // Simular timer iniciando
+    mockTimerStore.isRunning = true;
+
+    // Mock do rerender não é necessário, o hook deve reagir à mudança
+
+    // Avançar o tempo para executar o setTimeout
+    jest.advanceTimersByTime(600);
+
+    // Verificar se syncToCloud foi chamado (através do fetch)
+    expect(global.fetch).toHaveBeenCalledWith('/api/drive/backup', expect.any(Object));
+
+    jest.useRealTimers();
+  });
 });
