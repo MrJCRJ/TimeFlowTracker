@@ -1,17 +1,16 @@
 import { NextResponse } from 'next/server';
 import { getSession, getAccessToken } from '@/lib/auth';
-import { createDriveService, DriveFolderManager } from '@/lib/drive';
-import { DriveFileManager } from '@/lib/drive/file-manager';
+import { createDriveService } from '@/lib/drive';
 import type { ApiResponse } from '@/types';
 
 // Forçar renderização dinâmica
 export const dynamic = 'force-dynamic';
 
 /**
- * DELETE /api/drive/clear
- * Limpa todos os dados do Google Drive e caches
+ * GET /api/drive/verify
+ * Verifica se arquivos de dados foram deletados externamente no Google Drive
  */
-export async function DELETE(): Promise<NextResponse<ApiResponse>> {
+export async function GET(): Promise<NextResponse<ApiResponse>> {
   try {
     const session = await getSession();
 
@@ -39,30 +38,27 @@ export async function DELETE(): Promise<NextResponse<ApiResponse>> {
     }
 
     const driveService = createDriveService(accessToken);
-    const { deletedCount } = await driveService.clearAll();
-
-    // Limpa caches estáticos
-    DriveFolderManager.clearCache();
-    DriveFileManager.clearKnownFilesCache();
+    const verification = await driveService.verifyDataFiles();
 
     return NextResponse.json({
       success: true,
       data: {
-        message: 'Dados do Drive limpos com sucesso',
-        deletedCount,
-        clearedAt: new Date().toISOString(),
-        cacheCleared: true,
+        ...verification,
+        message: verification.anyDeleted
+          ? 'Alguns arquivos foram deletados do Google Drive'
+          : 'Todos os arquivos estão intactos',
+        verifiedAt: new Date().toISOString(),
       },
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('Error clearing Drive data:', error);
+    console.error('Error verifying Drive files:', error);
     return NextResponse.json(
       {
         success: false,
         error: {
           code: 'DRIVE_ERROR',
-          message: 'Erro ao limpar dados do Google Drive',
+          message: 'Erro ao verificar arquivos do Google Drive',
         },
         timestamp: new Date().toISOString(),
       },

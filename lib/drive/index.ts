@@ -6,6 +6,16 @@ import { DRIVE_FILES } from '../constants';
 import type { Category, TimeEntry, UserPreferences, DeviceInfo, ActiveTimerRecord } from '@/types';
 
 /**
+ * Resultado da verificação de dados do Drive
+ */
+export interface DriveDataVerification {
+  categoriesDeleted: boolean;
+  timeEntriesDeleted: boolean;
+  preferencesDeleted: boolean;
+  anyDeleted: boolean;
+}
+
+/**
  * Serviço principal para integração com Google Drive
  * Responsável por operações de sincronização de dados do TimeFlow
  */
@@ -57,6 +67,31 @@ export class GoogleDriveService {
    */
   async listFiles(): Promise<drive_v3.Schema$File[]> {
     return this.fileManager.listFiles();
+  }
+
+  /**
+   * Verifica se arquivos de dados foram deletados externamente
+   */
+  async verifyDataFiles(): Promise<DriveDataVerification> {
+    const [categoriesResult, timeEntriesResult, preferencesResult] = await Promise.all([
+      this.fileManager.verifyFile(DRIVE_FILES.CATEGORIES),
+      this.fileManager.verifyFile(DRIVE_FILES.TIME_ENTRIES),
+      this.fileManager.verifyFile(DRIVE_FILES.PREFERENCES),
+    ]);
+
+    const result = {
+      categoriesDeleted: categoriesResult.wasDeleted,
+      timeEntriesDeleted: timeEntriesResult.wasDeleted,
+      preferencesDeleted: preferencesResult.wasDeleted,
+      anyDeleted:
+        categoriesResult.wasDeleted || timeEntriesResult.wasDeleted || preferencesResult.wasDeleted,
+    };
+
+    if (result.anyDeleted) {
+      console.log('[Drive] Arquivos deletados externamente detectados:', result);
+    }
+
+    return result;
   }
 
   // ==================== Métodos de Categorias ====================
@@ -217,17 +252,50 @@ export class GoogleDriveService {
   }
 
   /**
+   * Carrega todos os dados com verificação de exclusão externa
+   */
+  async loadAllWithVerification(): Promise<{
+    categories: Category[];
+    timeEntries: TimeEntry[];
+    preferences: UserPreferences | null;
+    deletedFiles: DriveDataVerification;
+  }> {
+    // Primeiro verifica se arquivos foram deletados
+    const deletedFiles = await this.verifyDataFiles();
+
+    // Se algum foi deletado, retorna dados vazios e notifica
+    if (deletedFiles.anyDeleted) {
+      return {
+        categories: deletedFiles.categoriesDeleted ? [] : await this.readCategories(),
+        timeEntries: deletedFiles.timeEntriesDeleted ? [] : await this.readTimeEntries(),
+        preferences: deletedFiles.preferencesDeleted ? null : await this.readPreferences(),
+        deletedFiles,
+      };
+    }
+
+    const [categories, timeEntries, preferences] = await Promise.all([
+      this.readCategories(),
+      this.readTimeEntries(),
+      this.readPreferences(),
+    ]);
+
+    return { categories, timeEntries, preferences, deletedFiles };
+  }
+
+  /**
    * Limpa todos os dados do Drive (para reset)
    */
-  async clearAll(): Promise<void> {
+  async clearAll(): Promise<{ deletedCount: number }> {
     // Limpa timers ativos também
     await this.clearAllActiveTimers();
 
-    await Promise.all([
-      this.fileManager.deleteFile(DRIVE_FILES.CATEGORIES),
-      this.fileManager.deleteFile(DRIVE_FILES.TIME_ENTRIES),
-      this.fileManager.deleteFile(DRIVE_FILES.PREFERENCES),
-    ]);
+    // Deleta todos os arquivos na pasta (incluindo os antigos)
+    const deletedCount = await this.fileManager.deleteAllFiles();
+
+    // Limpa cache de pastas para forçar nova verificação
+    DriveFolderManager.clearCache();
+
+    return { deletedCount };
   }
 }
 
@@ -241,3 +309,4 @@ export function createDriveService(accessToken: string): GoogleDriveService {
 // Re-exportar para limpeza de cache
 export { DriveFolderManager } from './folder-manager';
 export { ActiveTimerManager } from './active-timer-manager';
+export { DriveFileManager, type FileVerificationResult } from './file-manager';

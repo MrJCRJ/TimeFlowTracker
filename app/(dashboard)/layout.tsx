@@ -2,11 +2,9 @@ import { redirect } from 'next/navigation';
 import { getSession } from '@/lib/auth';
 import { validateEnvironment } from '@/lib/env-validation';
 import { Providers } from '../providers';
-import { TimerBarWrapper } from '@/components/timer/TimerBarWrapper';
-import { Sidebar } from '@/components/layout/Sidebar';
-import { Header } from '@/components/layout/Header';
 import { TimerNotifications } from '@/components/notifications/TimerNotifications';
 import { TimerSync } from '@/components/timer/TimerSync';
+import { DashboardLayoutClient } from './DashboardLayoutClient';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -31,28 +29,13 @@ export default async function DashboardLayout({ children }: DashboardLayoutProps
 
   return (
     <Providers>
-      <div className="flex min-h-screen">
-        {/* Sidebar */}
-        <Sidebar user={session.user} />
+      <DashboardLayoutClient user={session.user}>{children}</DashboardLayoutClient>
 
-        {/* Main content */}
-        <div className="flex flex-1 flex-col lg:ml-sidebar">
-          {/* Header */}
-          <Header user={session.user} />
+      {/* Timer Notifications */}
+      <TimerNotifications />
 
-          {/* Page content */}
-          <main className="pb-timer flex-1 p-4 md:p-6">{children}</main>
-
-          {/* Timer Bar */}
-          <TimerBarWrapper userId={session.user.id} />
-        </div>
-
-        {/* Timer Notifications */}
-        <TimerNotifications />
-
-        {/* Timer Sync (auto-sync e persistência) */}
-        <TimerSync />
-      </div>
+      {/* Timer Sync (auto-sync e persistência) */}
+      <TimerSync />
     </Providers>
   );
 }

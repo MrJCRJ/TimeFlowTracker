@@ -66,9 +66,11 @@ export default function SettingsPage() {
     if (confirm('Tem certeza que deseja limpar todos os dados? Esta ação não pode ser desfeita.')) {
       setIsClearing(true);
       try {
+        // 1. Resetar stores
         resetCategories();
         resetTimer();
 
+        // 2. Limpar TODAS as chaves do localStorage relacionadas ao app
         const keysToRemove = [
           'timer-storage',
           'timeflow_categories',
@@ -77,18 +79,67 @@ export default function SettingsPage() {
           'timeflow_preferences',
           'timeflow_sync_metadata',
           'timeflow_theme',
+          'category-storage',
+          'timer_state',
+          'categories_state',
         ];
 
+        // Limpar chaves específicas
         keysToRemove.forEach((key) => {
           localStorage.removeItem(key);
         });
 
+        // Limpar todas as chaves que começam com 'timeflow' ou relacionadas
+        const allKeys = Object.keys(localStorage);
+        allKeys.forEach((key) => {
+          if (
+            key.startsWith('timeflow') ||
+            key.startsWith('timer') ||
+            key.startsWith('category') ||
+            key.includes('sync') ||
+            key.includes('drive')
+          ) {
+            localStorage.removeItem(key);
+          }
+        });
+
+        // 3. Limpar IndexedDB se existir
+        if ('indexedDB' in window) {
+          const databases = (await window.indexedDB.databases?.()) || [];
+          for (const db of databases) {
+            if (
+              db.name &&
+              (db.name.includes('timeflow') ||
+                db.name.includes('timer') ||
+                db.name.includes('category'))
+            ) {
+              window.indexedDB.deleteDatabase(db.name);
+            }
+          }
+        }
+
+        // 4. Limpar Cache Storage se existir
+        if ('caches' in window) {
+          const cacheNames = await caches.keys();
+          for (const name of cacheNames) {
+            if (name.includes('timeflow')) {
+              await caches.delete(name);
+            }
+          }
+        }
+
+        // 5. Limpar dados do Drive (deletando todos os arquivos)
         if (session?.accessToken) {
           try {
-            await fetch('/api/drive/clear', {
+            const response = await fetch('/api/drive/clear', {
               method: 'DELETE',
               headers: { 'Content-Type': 'application/json' },
             });
+
+            const data = await response.json();
+            if (data.success) {
+              console.log(`${data.data.deletedCount} arquivos deletados do Drive`);
+            }
           } catch (driveError) {
             console.warn('Não foi possível limpar dados do Drive:', driveError);
           }
@@ -96,10 +147,11 @@ export default function SettingsPage() {
 
         addNotification({
           type: 'success',
-          title: 'Dados limpos',
-          message: 'Todos os dados foram removidos com sucesso.',
+          title: 'Dados limpos completamente',
+          message: 'Todos os dados locais e do Drive foram removidos com sucesso.',
         });
 
+        // Aguardar um pouco e recarregar
         setTimeout(() => {
           window.location.reload();
         }, 1500);
@@ -200,17 +252,10 @@ export default function SettingsPage() {
       </div>
 
       {/* Profile Section */}
-      <ProfileSection
-        user={session?.user ?? null}
-        onSignOut={handleSignOut}
-      />
+      <ProfileSection user={session?.user ?? null} onSignOut={handleSignOut} />
 
       {/* Appearance Section */}
-      <AppearanceSection
-        theme={theme}
-        isDark={isDark}
-        onThemeChange={setTheme}
-      />
+      <AppearanceSection theme={theme} isDark={isDark} onThemeChange={setTheme} />
 
       {/* Notifications Section */}
       <NotificationsSection
@@ -239,10 +284,7 @@ export default function SettingsPage() {
       />
 
       {/* Danger Zone */}
-      <DangerZoneSection
-        isClearing={isClearing}
-        onClearData={handleClearData}
-      />
+      <DangerZoneSection isClearing={isClearing} onClearData={handleClearData} />
     </div>
   );
 }

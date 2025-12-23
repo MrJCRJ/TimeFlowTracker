@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 
 /**
  * GET /api/drive/sync
- * Carrega todos os dados do Google Drive
+ * Carrega todos os dados do Google Drive com verificação de exclusão
  */
 export async function GET(): Promise<NextResponse<ApiResponse>> {
   try {
@@ -38,11 +38,32 @@ export async function GET(): Promise<NextResponse<ApiResponse>> {
     }
 
     const driveService = createDriveService(accessToken);
-    const data = await driveService.loadAll();
+    const data = await driveService.loadAllWithVerification();
+
+    // Se algum arquivo foi deletado externamente, notificar o cliente
+    if (data.deletedFiles.anyDeleted) {
+      return NextResponse.json({
+        success: true,
+        data: {
+          categories: data.categories,
+          timeEntries: data.timeEntries,
+          preferences: data.preferences,
+          dataDeleted: true,
+          deletedFiles: data.deletedFiles,
+          message: 'Alguns dados foram deletados do Google Drive',
+        },
+        timestamp: new Date().toISOString(),
+      });
+    }
 
     return NextResponse.json({
       success: true,
-      data,
+      data: {
+        categories: data.categories,
+        timeEntries: data.timeEntries,
+        preferences: data.preferences,
+        dataDeleted: false,
+      },
       timestamp: new Date().toISOString(),
     });
   } catch (error) {

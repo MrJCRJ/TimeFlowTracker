@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { Menu } from 'lucide-react';
 import { useSync } from './header/useSync';
 import { SyncButton } from './header/SyncButton';
 import { UserAvatar } from './header/UserAvatar';
@@ -10,9 +11,10 @@ import type { AuthUser } from '@/lib/auth';
 
 interface HeaderProps {
   user: AuthUser;
+  onToggleSidebar?: () => void;
 }
 
-export function Header({ user }: HeaderProps) {
+export function Header({ user, onToggleSidebar }: HeaderProps) {
   const { handleSync, isSyncing } = useSync();
 
   return (
@@ -29,6 +31,15 @@ export function Header({ user }: HeaderProps) {
 
           {/* Actions */}
           <div className="flex items-center gap-2">
+            {onToggleSidebar && (
+              <button
+                onClick={onToggleSidebar}
+                className="rounded-md p-2 transition-colors hover:bg-accent lg:hidden"
+                aria-label="Toggle sidebar"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
+            )}
             <SyncButton onClick={handleSync} isLoading={isSyncing} />
             <NotificationsPanel />
             <UserAvatar user={user} size="sm" className="lg:hidden" />
