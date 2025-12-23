@@ -45,7 +45,7 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
                 <span className="text-sm font-bold text-primary-foreground">TF</span>
               </div>
-              <span className="font-semibold hidden sm:inline">TimeFlow</span>
+              <span className="hidden font-semibold sm:inline">TimeFlow</span>
             </Link>
           </div>
 
