@@ -33,9 +33,13 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
           <div className="flex items-center gap-2">
             {onToggleSidebar && (
               <button
-                onClick={onToggleSidebar}
-                className="rounded-md p-2 transition-colors hover:bg-accent lg:hidden"
-                aria-label="Toggle sidebar"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onToggleSidebar();
+                }}
+                className="rounded-md p-2 transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 lg:hidden"
+                aria-label="Abrir menu lateral"
               >
                 <Menu className="h-5 w-5" />
               </button>

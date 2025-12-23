@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { useNotificationStore } from '@/stores/notificationStore';
 import { useCategoryStore } from '@/stores/categoryStore';
 import { useTimerStore } from '@/stores/timerStore';
+import { mergeCategories, mergeTimeEntries } from '@/lib/sync/merge-utils';
 import type { UserPreferences } from '@/types';
 
 export function useSync() {
   const [isSyncing, setIsSyncing] = useState(false);
-  const { categories, setCategories, reset: resetCategories } = useCategoryStore();
-  const { timeEntries, setTimeEntries, reset: resetTimer } = useTimerStore();
+  const { categories, setCategories } = useCategoryStore();
+  const { timeEntries, setTimeEntries } = useTimerStore();
 
   const handleSync = async () => {
     setIsSyncing(true);
@@ -29,37 +30,90 @@ export function useSync() {
         throw new Error('Token de acesso do Google não encontrado. Faça login novamente.');
       }
 
-      // Mostrar notificação de início (mais discreta)
+      // Mostrar notificação de início
       useNotificationStore.getState().addNotification({
         type: 'info',
         title: 'Sincronizando',
-        message: 'Sincronizando dados...',
+        message: 'Sincronizando dados entre dispositivos...',
       });
 
-      // 1. Primeiro verificar se dados foram deletados no Drive
-      const verifyResponse = await fetch('/api/drive/verify');
-      if (verifyResponse.ok) {
-        const verifyData = await verifyResponse.json();
-        if (verifyData.success && verifyData.data?.anyDeleted) {
-          // Dados foram deletados externamente - notificar usuário
-          useNotificationStore.getState().addNotification({
-            type: 'warning',
-            title: 'Dados Deletados',
-            message:
-              'Alguns dados foram deletados do Google Drive. Seus dados locais serão enviados.',
-          });
+      // 1. Carregar dados do Drive primeiro para fazer merge
+      const syncResponse = await fetch('/api/drive/sync', {
+        method: 'GET',
+      });
+
+      if (!syncResponse.ok) {
+        const errorData = await syncResponse.json();
+        throw new Error(errorData.error?.message || 'Falha ao carregar dados do Drive');
+      }
+
+      const syncData = await syncResponse.json();
+
+      // 2. Fazer merge inteligente dos dados
+      let mergedCategories = categories;
+      let mergedTimeEntries = timeEntries;
+      const mergeStats = {
+        categories: { localOnly: 0, remoteOnly: 0, merged: 0, conflicts: 0 },
+        timeEntries: { localOnly: 0, remoteOnly: 0, merged: 0, conflicts: 0 },
+      };
+
+      if (syncData.success && syncData.data) {
+        const {
+          categories: driveCategories,
+          timeEntries: driveTimeEntries,
+          dataDeleted,
+          deletedFiles,
+        } = syncData.data;
+
+        // Se dados foram deletados no Drive, usar apenas dados locais
+        if (dataDeleted && deletedFiles) {
+          if (deletedFiles.categoriesDeleted) {
+            useNotificationStore.getState().addNotification({
+              type: 'info',
+              title: 'Sincronizando Categorias',
+              message: 'Enviando suas categorias locais para o Drive.',
+            });
+          }
+          if (deletedFiles.timeEntriesDeleted) {
+            useNotificationStore.getState().addNotification({
+              type: 'info',
+              title: 'Sincronizando Registros',
+              message: 'Enviando seus registros locais para o Drive.',
+            });
+          }
+        } else {
+          // Fazer merge inteligente
+          if (driveCategories && driveCategories.length > 0) {
+            const categoryMerge = mergeCategories(categories, driveCategories);
+            mergedCategories = categoryMerge.merged;
+            mergeStats.categories = categoryMerge.stats;
+
+            if (categoryMerge.conflicts.length > 0) {
+              console.warn('Conflitos de categoria resolvidos:', categoryMerge.conflicts);
+            }
+          }
+
+          if (driveTimeEntries && driveTimeEntries.length > 0) {
+            const timeEntryMerge = mergeTimeEntries(timeEntries, driveTimeEntries);
+            mergedTimeEntries = timeEntryMerge.merged;
+            mergeStats.timeEntries = timeEntryMerge.stats;
+
+            if (timeEntryMerge.conflicts.length > 0) {
+              console.warn('Conflitos de time entries resolvidos:', timeEntryMerge.conflicts);
+            }
+          }
         }
       }
 
-      // 2. Fazer backup dos dados locais para o Drive
+      // 3. Enviar dados mesclados de volta para o Drive
       const backupResponse = await fetch('/api/drive/backup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          categories,
-          timeEntries,
+          categories: mergedCategories,
+          timeEntries: mergedTimeEntries,
           preferences: {
             userId: session.user.id,
             workHours: { start: '09:00', end: '18:00' },
@@ -75,73 +129,38 @@ export function useSync() {
 
       if (!backupResponse.ok) {
         const errorData = await backupResponse.json();
-        throw new Error(errorData.error?.message || 'Falha ao fazer backup para o Drive');
+        throw new Error(errorData.error?.message || 'Falha ao salvar dados no Drive');
       }
 
-      // 3. Carregar dados do Drive
-      const syncResponse = await fetch('/api/drive/sync', {
-        method: 'GET',
-      });
-
-      if (!syncResponse.ok) {
-        const errorData = await syncResponse.json();
-        throw new Error(errorData.error?.message || 'Falha ao sincronizar dados do Drive');
+      // 4. Atualizar stores locais com dados mesclados
+      if (mergedCategories !== categories) {
+        setCategories(mergedCategories);
+      }
+      if (mergedTimeEntries !== timeEntries) {
+        setTimeEntries(mergedTimeEntries);
       }
 
-      const syncData = await syncResponse.json();
+      // 5. Mostrar estatísticas do merge se houver mudanças
+      const totalChanges =
+        mergeStats.categories.localOnly +
+        mergeStats.categories.remoteOnly +
+        mergeStats.timeEntries.localOnly +
+        mergeStats.timeEntries.remoteOnly;
 
-      // 4. Verificar se dados foram deletados e atualizar stores locais
-      if (syncData.success && syncData.data) {
-        const {
-          categories: driveCategories,
-          timeEntries: driveTimeEntries,
-          dataDeleted,
-          deletedFiles,
-        } = syncData.data;
-
-        // Se dados foram deletados no Drive, avisar e resetar local
-        if (dataDeleted && deletedFiles) {
-          if (deletedFiles.categoriesDeleted) {
-            resetCategories();
-            useNotificationStore.getState().addNotification({
-              type: 'warning',
-              title: 'Categorias Deletadas',
-              message: 'As categorias foram deletadas do Google Drive.',
-            });
-          }
-          if (deletedFiles.timeEntriesDeleted) {
-            resetTimer();
-            useNotificationStore.getState().addNotification({
-              type: 'warning',
-              title: 'Registros Deletados',
-              message: 'Os registros de tempo foram deletados do Google Drive.',
-            });
-          }
-        } else {
-          // Atualizar stores com dados do Drive se existirem
-          if (driveCategories && driveCategories.length > 0) {
-            setCategories(driveCategories);
-          }
-          if (driveTimeEntries && driveTimeEntries.length > 0) {
-            setTimeEntries(driveTimeEntries);
-          }
-        }
-
-        console.log('Dados sincronizados:', {
-          localCategories: categories.length,
-          driveCategories: driveCategories?.length || 0,
-          localTimeEntries: timeEntries.length,
-          driveTimeEntries: driveTimeEntries?.length || 0,
-          dataDeleted,
+      if (totalChanges > 0) {
+        useNotificationStore.getState().addNotification({
+          type: 'success',
+          title: 'Sincronização Completa',
+          message: `${totalChanges} itens sincronizados entre dispositivos.`,
+        });
+      } else {
+        // Mostrar notificação de sucesso simples
+        useNotificationStore.getState().addNotification({
+          type: 'success',
+          title: 'Sincronizado',
+          message: 'Dados estão atualizados em todos os dispositivos.',
         });
       }
-
-      // Mostrar notificação de sucesso (mais discreta)
-      useNotificationStore.getState().addNotification({
-        type: 'success',
-        title: 'Sincronizado',
-        message: 'Dados atualizados com sucesso',
-      });
     } catch (error) {
       console.error('Erro na sincronização:', error);
 
@@ -156,8 +175,5 @@ export function useSync() {
     }
   };
 
-  return {
-    isSyncing,
-    handleSync,
-  };
+  return { handleSync, isSyncing };
 }
