@@ -62,10 +62,13 @@ export function CloudTimerBar({ userId, className, isLoading = false }: CloudTim
   const timerStore = useTimerStore();
 
   // Callbacks memoizados para evitar re-renders desnecessários
-  const handleTimerStopped = useCallback((entry: TimeEntry) => {
-    // Quando timer é parado, adiciona ao store local também
-    timerStore.addTimeEntry(entry);
-  }, [timerStore]);
+  const handleTimerStopped = useCallback(
+    (entry: TimeEntry) => {
+      // Quando timer é parado, adiciona ao store local também
+      timerStore.addTimeEntry(entry);
+    },
+    [timerStore]
+  );
 
   const handleRemoteTimerFound = useCallback((timer: ActiveTimerRecord) => {
     // Notificar quando encontrar timer de outro dispositivo
@@ -73,12 +76,15 @@ export function CloudTimerBar({ userId, className, isLoading = false }: CloudTim
   }, []);
 
   // Opções do hook memoizadas para evitar re-renders
-  const activeTimerDriveOptions = useMemo(() => ({
-    pollingInterval: 15000, // Verificar a cada 15 segundos
-    enablePolling: true,
-    onTimerStopped: handleTimerStopped,
-    onRemoteTimerFound: handleRemoteTimerFound,
-  }), [handleTimerStopped, handleRemoteTimerFound]);
+  const activeTimerDriveOptions = useMemo(
+    () => ({
+      pollingInterval: 15000, // Verificar a cada 15 segundos
+      enablePolling: true,
+      onTimerStopped: handleTimerStopped,
+      onRemoteTimerFound: handleRemoteTimerFound,
+    }),
+    [handleTimerStopped, handleRemoteTimerFound]
+  );
 
   // Hook para timers no Drive
   const {

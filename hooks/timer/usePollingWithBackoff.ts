@@ -65,7 +65,9 @@ export function usePollingWithBackoff({ interval, enabled, onPoll, onError }: Us
           `[usePollingWithBackoff] Quota exceeded detectado. Backoff por ${minutes} minutos até ${until.toLocaleString()}`
         );
 
-        onErrorRef.current?.(`Limite de quota excedido. Sincronização pausada por ${minutes} minutos.`);
+        onErrorRef.current?.(
+          `Limite de quota excedido. Sincronização pausada por ${minutes} minutos.`
+        );
         return;
       }
 
