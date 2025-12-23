@@ -1,14 +1,14 @@
 'use client';
 
-import React, { useEffect, useCallback, useState } from 'react';
+import React, { useEffect, useCallback, useState, useMemo } from 'react';
 import { SyncIndicator } from '@/components/ui/SyncIndicator';
 import { LoadingState } from '@/components/ui/loading-state';
 import { cn, formatTime, diffInSeconds, now } from '@/lib/utils';
 import { useTimerStore } from '@/stores/timerStore';
 import { useCategoryStore } from '@/stores/categoryStore';
-import { useActiveTimerDrive } from '@/hooks/useActiveTimerDrive';
+import { useActiveTimerDrive } from '../../hooks/useActiveTimerDrive';
 import { TIMER_UPDATE_INTERVAL } from '@/lib/constants';
-import type { Category, ActiveTimerRecord } from '@/types';
+import type { Category, ActiveTimerRecord, TimeEntry } from '@/types';
 import {
   Play,
   Square,
@@ -61,6 +61,25 @@ export function CloudTimerBar({ userId, className, isLoading = false }: CloudTim
   const { categories, initializeDefaults } = useCategoryStore();
   const timerStore = useTimerStore();
 
+  // Callbacks memoizados para evitar re-renders desnecessários
+  const handleTimerStopped = useCallback((entry: TimeEntry) => {
+    // Quando timer é parado, adiciona ao store local também
+    timerStore.addTimeEntry(entry);
+  }, [timerStore]);
+
+  const handleRemoteTimerFound = useCallback((timer: ActiveTimerRecord) => {
+    // Notificar quando encontrar timer de outro dispositivo
+    console.log(`[CloudTimerBar] Timer encontrado de: ${timer.deviceName}`);
+  }, []);
+
+  // Opções do hook memoizadas para evitar re-renders
+  const activeTimerDriveOptions = useMemo(() => ({
+    pollingInterval: 15000, // Verificar a cada 15 segundos
+    enablePolling: true,
+    onTimerStopped: handleTimerStopped,
+    onRemoteTimerFound: handleRemoteTimerFound,
+  }), [handleTimerStopped, handleRemoteTimerFound]);
+
   // Hook para timers no Drive
   const {
     activeTimers,
@@ -70,18 +89,7 @@ export function CloudTimerBar({ userId, className, isLoading = false }: CloudTim
     startTimer: startDriveTimer,
     stopTimer: stopDriveTimer,
     cancelTimer: cancelDriveTimer,
-  } = useActiveTimerDrive({
-    pollingInterval: 15000, // Verificar a cada 15 segundos
-    enablePolling: true,
-    onTimerStopped: (entry) => {
-      // Quando timer é parado, adiciona ao store local também
-      timerStore.addTimeEntry(entry);
-    },
-    onRemoteTimerFound: (timer) => {
-      // Notificar quando encontrar timer de outro dispositivo
-      console.log(`[CloudTimerBar] Timer encontrado de: ${timer.deviceName}`);
-    },
-  });
+  } = useActiveTimerDrive(activeTimerDriveOptions);
 
   // Estado local para controlar tempo decorrido de cada timer
   const [elapsedTimes, setElapsedTimes] = useState<Record<string, number>>({});

@@ -5,4 +5,5 @@
  */
 
 export { SyncManager, syncManager } from './sync-manager';
-export type { SyncManagerConfig, SyncResult } from './sync-manager';
+export type { SyncManagerConfig } from './config/sync-config';
+export type { SyncResult } from './types/sync-types';

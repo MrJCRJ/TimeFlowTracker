@@ -12,55 +12,119 @@
  * - Retry: Tenta novamente em caso de falha
  */
 
-import { DEFAULT_SYNC_CONFIG, type SyncManagerConfig } from './config/sync-config';
-import { generateDataHash } from './utils/hash-utils';
-import { RetryStrategy } from './strategies/retry-strategy';
-import { ThrottleStrategy } from './strategies/throttle-strategy';
-import { DebounceStrategy } from './strategies/debounce-strategy';
-import type { DataState, SyncResult, SyncCallbacks } from './types/sync-types';
+import type { Category, TimeEntry } from '@/types';
+
+// Configurações do gerenciador de sincronização
+export interface SyncManagerConfig {
+  debounceMs: number; // Tempo para agrupar mudanças (padrão: 5s)
+  throttleMs: number; // Intervalo mínimo entre syncs (padrão: 30s)
+  maxRetries: number; // Máximo de tentativas em caso de erro
+  syncIntervalMs: number; // Intervalo de sync automático (padrão: 5min)
+}
+
+// Estado atual dos dados para comparação
+interface DataState {
+  categories: Category[];
+  timeEntries: TimeEntry[];
+  activeTimerId: string | null;
+  hash: string;
+  timestamp: number;
+}
+
+// Resultado de uma operação de sync
+export interface SyncResult {
+  success: boolean;
+  direction: 'upload' | 'download' | 'none';
+  conflicts?: boolean;
+  error?: string;
+}
+
+const DEFAULT_CONFIG: SyncManagerConfig = {
+  debounceMs: 5000, // 5 segundos de debounce
+  throttleMs: 30000, // Mínimo 30 segundos entre syncs
+  maxRetries: 3,
+  syncIntervalMs: 5 * 60 * 1000, // 5 minutos
+};
+
+/**
+ * Gera hash simples dos dados para comparação rápida
+ */
+function generateHash(data: {
+  categories: Category[];
+  timeEntries: TimeEntry[];
+  activeTimerId?: string | null;
+}): string {
+  const str = JSON.stringify({
+    c: data.categories.map((c) => `${c.id}:${c.name}:${c.color}`).sort(),
+    t: data.timeEntries.map((t) => `${t.id}:${t.startTime}:${t.endTime || ''}`).sort(),
+    a: data.activeTimerId || '',
+  });
+
+  // Hash simples usando soma de caracteres
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash = hash & hash; // Converte para 32bit integer
+  }
+  return hash.toString(36);
+}
 
 /**
  * Classe principal do gerenciador de sincronização
  */
 export class SyncManager {
   private config: SyncManagerConfig;
-  private debounceStrategy: DebounceStrategy;
-  private throttleStrategy: ThrottleStrategy;
-  private retryStrategy: RetryStrategy;
-
+  private debounceTimer: NodeJS.Timeout | null = null;
+  private lastSyncTime: number = 0;
   private lastLocalState: DataState | null = null;
   private lastCloudState: DataState | null = null;
   private isSyncing: boolean = false;
   private syncQueue: Array<() => Promise<void>> = [];
+  private retryCount: number = 0;
 
-  // Callbacks para integração com stores
-  private callbacks: SyncCallbacks = {
-    getAccessToken: () => null,
-    getLocalData: () => ({ categories: [], timeEntries: [], activeTimerId: null }),
-    setLocalData: () => {},
-    onSyncComplete: () => {},
-  };
+  // Callbacks para obter/atualizar dados
+  private getAccessToken: () => string | null = () => null;
+  private getLocalData: () => {
+    categories: Category[];
+    timeEntries: TimeEntry[];
+    activeTimerId: string | null;
+  } = () => ({ categories: [], timeEntries: [], activeTimerId: null });
+  private setLocalData: (data: { categories: Category[]; timeEntries: TimeEntry[] }) => void =
+    () => {};
+  private onSyncComplete: (result: SyncResult) => void = () => {};
 
   constructor(config: Partial<SyncManagerConfig> = {}) {
-    this.config = { ...DEFAULT_SYNC_CONFIG, ...config };
-    this.debounceStrategy = new DebounceStrategy(this.config.debounceMs);
-    this.throttleStrategy = new ThrottleStrategy(this.config.throttleMs);
-    this.retryStrategy = new RetryStrategy(this.config.maxRetries);
+    this.config = { ...DEFAULT_CONFIG, ...config };
   }
 
   /**
    * Configura callbacks para integração com stores
    */
-  configure(callbacks: SyncCallbacks): void {
-    this.callbacks = { ...this.callbacks, ...callbacks };
+  configure(options: {
+    getAccessToken: () => string | null;
+    getLocalData: () => {
+      categories: Category[];
+      timeEntries: TimeEntry[];
+      activeTimerId: string | null;
+    };
+    setLocalData: (data: { categories: Category[]; timeEntries: TimeEntry[] }) => void;
+    onSyncComplete?: (result: SyncResult) => void;
+  }) {
+    this.getAccessToken = options.getAccessToken;
+    this.getLocalData = options.getLocalData;
+    this.setLocalData = options.setLocalData;
+    if (options.onSyncComplete) {
+      this.onSyncComplete = options.onSyncComplete;
+    }
   }
 
   /**
    * Verifica se dados locais mudaram desde último sync
    */
   private hasLocalChanges(): boolean {
-    const currentData = this.callbacks.getLocalData();
-    const currentHash = generateDataHash(currentData);
+    const currentData = this.getLocalData();
+    const currentHash = generateHash(currentData);
 
     if (!this.lastLocalState) {
       return true; // Primeiro sync
@@ -70,11 +134,25 @@ export class SyncManager {
   }
 
   /**
+   * Verifica se pode fazer sync (respeitando throttle)
+   */
+  private canSync(): boolean {
+    const now = Date.now();
+    return now - this.lastSyncTime >= this.config.throttleMs;
+  }
+
+  /**
    * Agenda um sync com debounce
    */
   scheduleSync(immediate: boolean = false): void {
+    // Cancela timer anterior
+    if (this.debounceTimer) {
+      clearTimeout(this.debounceTimer);
+      this.debounceTimer = null;
+    }
+
     // Se não tem token, não agenda
-    if (!this.callbacks.getAccessToken()) {
+    if (!this.getAccessToken()) {
       return;
     }
 
@@ -85,19 +163,21 @@ export class SyncManager {
     }
 
     // Se é imediato e pode sincronizar, faz agora
-    if (immediate && this.throttleStrategy.canExecute()) {
+    if (immediate && this.canSync()) {
       this.executeSync('upload');
       return;
     }
 
     // Agenda com debounce
-    const delay = immediate ? this.throttleStrategy.getTimeUntilNext() : this.config.debounceMs;
+    const delay = immediate
+      ? Math.max(0, this.config.throttleMs - (Date.now() - this.lastSyncTime))
+      : this.config.debounceMs;
 
     console.log(`[SyncManager] Sync agendado em ${delay}ms`);
 
-    this.debounceStrategy.schedule(() => {
+    this.debounceTimer = setTimeout(() => {
       this.executeSync('upload');
-    });
+    }, delay);
   }
 
   /**
@@ -133,7 +213,7 @@ export class SyncManager {
       });
     }
 
-    const token = this.callbacks.getAccessToken();
+    const token = this.getAccessToken();
     if (!token) {
       return { success: false, direction: 'none', error: 'No access token' };
     }
@@ -141,39 +221,42 @@ export class SyncManager {
     this.isSyncing = true;
 
     try {
-      const result = await this.retryStrategy.execute(
-        async () => {
-          if (direction === 'upload') {
-            return await this.performUpload(token);
-          } else {
-            return await this.performDownload(token);
-          }
-        },
-        (attempt, error) => {
-          console.log(
-            `[SyncManager] Tentativa ${attempt}/${this.config.maxRetries}: ${error.message}`
-          );
-        }
-      );
+      let result: SyncResult;
+
+      if (direction === 'upload') {
+        result = await this.performUpload(token);
+      } else {
+        result = await this.performDownload(token);
+      }
 
       // Atualiza estado após sync bem sucedido
       if (result.success) {
-        this.throttleStrategy.execute(async () => {}); // Atualiza timestamp
-        this.retryStrategy.reset();
+        this.lastSyncTime = Date.now();
+        this.retryCount = 0;
 
         // Atualiza hash do estado local
-        const currentData = this.callbacks.getLocalData();
+        const currentData = this.getLocalData();
         this.lastLocalState = {
           ...currentData,
-          hash: generateDataHash(currentData),
+          hash: generateHash(currentData),
           timestamp: Date.now(),
         };
       }
 
-      this.callbacks.onSyncComplete?.(result);
+      this.onSyncComplete(result);
       return result;
     } catch (error) {
       console.error('[SyncManager] Erro no sync:', error);
+
+      // Retry em caso de erro
+      if (this.retryCount < this.config.maxRetries) {
+        this.retryCount++;
+        console.log(`[SyncManager] Tentativa ${this.retryCount}/${this.config.maxRetries}`);
+
+        // Aguarda antes de tentar novamente
+        await new Promise((resolve) => setTimeout(resolve, 1000 * this.retryCount));
+        return this.executeSync(direction);
+      }
 
       return {
         success: false,
@@ -195,7 +278,7 @@ export class SyncManager {
    * Realiza upload para a nuvem
    */
   private async performUpload(_token: string): Promise<SyncResult> {
-    const localData = this.callbacks.getLocalData();
+    const localData = this.getLocalData();
 
     console.log('[SyncManager] Fazendo upload...', {
       categories: localData.categories.length,
@@ -253,13 +336,13 @@ export class SyncManager {
       };
 
       // Gera hash dos dados da nuvem
-      const cloudHash = generateDataHash(cloudData);
+      const cloudHash = generateHash(cloudData);
 
       // Se dados da nuvem são diferentes dos locais, atualiza
       if (!this.lastLocalState || cloudHash !== this.lastLocalState.hash) {
         console.log('[SyncManager] Atualizando dados locais com dados da nuvem');
 
-        this.callbacks.setLocalData({
+        this.setLocalData({
           categories: cloudData.categories,
           timeEntries: cloudData.timeEntries,
         });
@@ -285,7 +368,10 @@ export class SyncManager {
    * Cancela qualquer sync pendente
    */
   cancel(): void {
-    this.debounceStrategy.cancel();
+    if (this.debounceTimer) {
+      clearTimeout(this.debounceTimer);
+      this.debounceTimer = null;
+    }
     this.syncQueue = [];
   }
 
@@ -295,7 +381,7 @@ export class SyncManager {
   getStatus() {
     return {
       isSyncing: this.isSyncing,
-      lastSyncTime: this.throttleStrategy.getTimeUntilNext(),
+      lastSyncTime: this.lastSyncTime,
       queueLength: this.syncQueue.length,
       hasLocalChanges: this.hasLocalChanges(),
     };
@@ -308,8 +394,8 @@ export class SyncManager {
     this.cancel();
     this.lastLocalState = null;
     this.lastCloudState = null;
-    this.retryStrategy.reset();
-    this.throttleStrategy.reset();
+    this.lastSyncTime = 0;
+    this.retryCount = 0;
   }
 }
 
