@@ -33,12 +33,12 @@ export function ManualSyncSection() {
       <CardHeader>
         <CardTitle>Sincronização com Google Drive</CardTitle>
         <CardDescription>
-          Faça backup dos seus dados ou restaure de um backup anterior.
-          Todos os dados ficam armazenados no seu Google Drive pessoal.
+          Faça backup dos seus dados ou restaure de um backup anterior. Todos os dados ficam
+          armazenados no seu Google Drive pessoal.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {/* Botão de Backup */}
           <div className="space-y-2">
             <h4 className="font-medium">Fazer Backup</h4>
@@ -93,9 +93,9 @@ export function ManualSyncSection() {
         </div>
 
         {/* Informações adicionais */}
-        <div className="mt-6 p-4 bg-muted rounded-lg">
-          <h5 className="font-medium mb-2">ℹ️ Sobre a Sincronização</h5>
-          <ul className="text-sm text-muted-foreground space-y-1">
+        <div className="mt-6 rounded-lg bg-muted p-4">
+          <h5 className="mb-2 font-medium">ℹ️ Sobre a Sincronização</h5>
+          <ul className="space-y-1 text-sm text-muted-foreground">
             <li>• Os dados ficam armazenados apenas no seu Google Drive</li>
             <li>• Você controla quando fazer backup ou restaurar</li>
             <li>• Restauração sobrescreve todos os dados locais atuais</li>
