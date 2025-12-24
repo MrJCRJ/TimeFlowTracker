@@ -2,11 +2,17 @@ import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 
+// Utilitários de debug em desenvolvimento
+if (process.env.NODE_ENV === 'development') {
+  import('@/lib/sync/debug-utils');
+}
+
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 export const metadata: Metadata = {
   title: 'TimeFlow Tracker',
-  description: 'Gerenciador de tempo inteligente - Acompanhe suas atividades e aumente sua produtividade',
+  description:
+    'Gerenciador de tempo inteligente - Acompanhe suas atividades e aumente sua produtividade',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
@@ -39,9 +45,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <head />
-      <body
-        className={`${inter.variable} font-sans antialiased bg-background text-foreground`}
-      >
+      <body className={`${inter.variable} bg-background font-sans text-foreground antialiased`}>
         {children}
       </body>
     </html>

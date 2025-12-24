@@ -74,19 +74,21 @@ export function setLocalUpdatedAt(timestamp: string): void {
 
 /**
  * Compara timestamps para decidir a ação de sync
+ * CORREÇÃO: Agora considera se dados locais têm conteúdo real
  */
 export function compareSyncTimestamps(
   localUpdatedAt: string | null,
-  driveUpdatedAt: string | null
+  driveUpdatedAt: string | null,
+  hasLocalData: boolean = false
 ): SyncCompareResult {
-  // Se não tem timestamp local, precisa baixar do drive (se existir)
-  if (!localUpdatedAt) {
+  // Se não tem timestamp local E não tem dados locais reais, precisa baixar do drive (se existir)
+  if (!localUpdatedAt && !hasLocalData) {
     if (driveUpdatedAt) {
       return {
         action: 'download',
         localTime: null,
         driveTime: new Date(driveUpdatedAt),
-        reason: 'Sem dados locais, baixando do Drive',
+        reason: 'Sem dados locais reais, baixando do Drive',
       };
     }
     return {
@@ -97,17 +99,35 @@ export function compareSyncTimestamps(
     };
   }
 
-  // Se não tem dados no Drive, precisa fazer upload
+  // Se não tem dados no Drive, precisa fazer upload (se tem dados locais)
   if (!driveUpdatedAt) {
+    if (hasLocalData) {
+      return {
+        action: 'upload',
+        localTime: localUpdatedAt ? new Date(localUpdatedAt) : null,
+        driveTime: null,
+        reason: 'Sem dados no Drive, fazendo upload',
+      };
+    }
     return {
-      action: 'upload',
-      localTime: new Date(localUpdatedAt),
+      action: 'none',
+      localTime: null,
       driveTime: null,
-      reason: 'Sem dados no Drive, fazendo upload',
+      reason: 'Sem dados locais para enviar',
     };
   }
 
-  const localTime = new Date(localUpdatedAt);
+  // Se não tem timestamp local mas tem dados, pode ser inicialização - baixar para verificar
+  if (!localUpdatedAt && hasLocalData) {
+    return {
+      action: 'download',
+      localTime: null,
+      driveTime: new Date(driveUpdatedAt),
+      reason: 'Dados locais podem ser de inicialização, verificando Drive',
+    };
+  }
+
+  const localTime = new Date(localUpdatedAt!);
   const driveTime = new Date(driveUpdatedAt);
 
   // Compara timestamps
@@ -209,7 +229,9 @@ export class SimpleSyncManager {
 
       // 2. Comparar timestamps
       const localUpdatedAt = getLocalUpdatedAt();
-      const comparison = compareSyncTimestamps(localUpdatedAt, driveUpdatedAt);
+      const localData = this.callbacks.getLocalData();
+      const hasLocalData = localData.categories.length > 0 || localData.timeEntries.length > 0;
+      const comparison = compareSyncTimestamps(localUpdatedAt, driveUpdatedAt, hasLocalData);
 
       console.log('[SimpleSync] Comparação:', comparison);
 
@@ -262,13 +284,31 @@ export class SimpleSyncManager {
     const result = await response.json();
 
     if (result.success && result.data) {
-      const data = {
+      const driveData = {
         categories: result.data.categories || [],
         timeEntries: result.data.timeEntries || [],
       };
 
+      // VERIFICAÇÃO DE SEGURANÇA: Se temos dados locais reais mas timestamp diz para baixar,
+      // pode ser um conflito - vamos verificar se realmente devemos sobrescrever
+      const localData = this.callbacks.getLocalData();
+      const hasLocalData = localData.categories.length > 0 || localData.timeEntries.length > 0;
+      const hasDriveData = driveData.categories.length > 0 || driveData.timeEntries.length > 0;
+
+      if (hasLocalData && !hasDriveData) {
+        console.warn(
+          '[SimpleSync] AVISO: Dados locais existem mas Drive está vazio. Mantendo dados locais.'
+        );
+        return {
+          success: true,
+          action: 'download',
+          message: 'Dados locais preservados (Drive vazio)',
+          data: localData,
+        };
+      }
+
       // Sobrescrever dados locais
-      this.callbacks.setLocalData(data);
+      this.callbacks.setLocalData(driveData);
 
       // Atualizar timestamp local
       if (result.data.updatedAt) {
@@ -279,7 +319,7 @@ export class SimpleSyncManager {
         success: true,
         action: 'download',
         message: 'Dados baixados do Drive',
-        data,
+        data: driveData,
       };
     }
 
@@ -297,6 +337,18 @@ export class SimpleSyncManager {
     console.log('[SimpleSync] Enviando dados para o Drive...');
 
     const localData = this.callbacks.getLocalData();
+    const hasLocalData = localData.categories.length > 0 || localData.timeEntries.length > 0;
+
+    // VERIFICAÇÃO DE SEGURANÇA: Não fazer upload se não temos dados reais
+    if (!hasLocalData) {
+      console.log('[SimpleSync] AVISO: Não há dados locais para enviar. Pulando upload.');
+      return {
+        success: true,
+        action: 'upload',
+        message: 'Nenhum dado local para enviar',
+      };
+    }
+
     const now = new Date().toISOString();
 
     const response = await fetch('/api/drive/sync/upload', {
@@ -410,10 +462,24 @@ export class SimpleSyncManager {
   }
 
   /**
-   * Marca dados como atualizados (para chamar após modificações locais)
+   * Retorna informações de diagnóstico para debugging
    */
-  markAsUpdated(): void {
-    setLocalUpdatedAt(new Date().toISOString());
+  getDiagnostics(): {
+    localTimestamp: string | null;
+    hasLocalData: boolean;
+    localDataCount: { categories: number; timeEntries: number };
+    isSyncing: boolean;
+  } {
+    const localData = this.callbacks.getLocalData();
+    return {
+      localTimestamp: getLocalUpdatedAt(),
+      hasLocalData: localData.categories.length > 0 || localData.timeEntries.length > 0,
+      localDataCount: {
+        categories: localData.categories.length,
+        timeEntries: localData.timeEntries.length,
+      },
+      isSyncing: this.isSyncing,
+    };
   }
 
   /**

@@ -5,7 +5,11 @@ import { useSession } from 'next-auth/react';
 import { useTimerStore } from '@/stores/timerStore';
 import { useCategoryStore } from '@/stores/categoryStore';
 import { useNotificationStore } from '@/stores/notificationStore';
-import { SimpleSyncManager, type SimpleSyncResult } from '@/lib/sync/simple-sync';
+import {
+  SimpleSyncManager,
+  type SimpleSyncResult,
+  getLocalUpdatedAt,
+} from '@/lib/sync/simple-sync';
 import type { Category, TimeEntry } from '@/types';
 
 /**
@@ -141,18 +145,50 @@ export function useAutoSync(config: Partial<SyncConfig> = {}) {
   useEffect(() => {
     if (!autoSync || !session?.accessToken || initialLoadDoneRef.current) return;
 
-    sync().then((success) => {
-      if (success && showNotifications) {
-        addNotification({
-          type: 'info',
-          title: 'Dados Sincronizados',
-          message: 'Seus dados foram carregados do Google Drive',
-        });
-      }
-    });
+    // Verificar se temos dados locais antes de sync
+    const hasLocalData = categories.length > 0 || timeEntries.length > 0;
+    const hasLocalTimestamp = !!getLocalUpdatedAt();
+
+    // Só fazer sync automático se:
+    // 1. Temos dados locais E timestamp (dados reais do usuário)
+    // 2. OU não temos dados locais mas temos timestamp (precisa baixar)
+    if (hasLocalData && hasLocalTimestamp) {
+      console.log('[useAutoSync] Sync inicial: dados locais existentes');
+      sync().then((success) => {
+        if (success && showNotifications) {
+          addNotification({
+            type: 'info',
+            title: 'Dados Sincronizados',
+            message: 'Seus dados foram sincronizados com o Google Drive',
+          });
+        }
+      });
+    } else if (!hasLocalData && hasLocalTimestamp) {
+      console.log('[useAutoSync] Sync inicial: baixando dados do Drive');
+      sync().then((success) => {
+        if (success && showNotifications) {
+          addNotification({
+            type: 'info',
+            title: 'Dados Carregados',
+            message: 'Seus dados foram carregados do Google Drive',
+          });
+        }
+      });
+    } else if (!hasLocalData && !hasLocalTimestamp) {
+      console.log('[useAutoSync] Sync inicial: pulado (primeiro uso)');
+      // Primeiro uso - não fazer sync automático, deixar usuário decidir
+    }
 
     initialLoadDoneRef.current = true;
-  }, [autoSync, session?.accessToken, sync, showNotifications, addNotification]);
+  }, [
+    autoSync,
+    session?.accessToken,
+    sync,
+    showNotifications,
+    addNotification,
+    categories.length,
+    timeEntries.length,
+  ]);
 
   // Sync automático periódico
   useEffect(() => {
