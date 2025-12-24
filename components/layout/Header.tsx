@@ -1,10 +1,8 @@
 'use client';
 
-import React, { useCallback } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { Menu } from 'lucide-react';
-import { useAutoSync } from '@/hooks/useAutoSync';
-import { SyncButton } from './header/SyncButton';
 import { UserAvatar } from './header/UserAvatar';
 import { NotificationsPanel } from './header/NotificationsPanel';
 import type { AuthUser } from '@/lib/auth';
@@ -15,12 +13,6 @@ interface HeaderProps {
 }
 
 export function Header({ user, onToggleSidebar }: HeaderProps) {
-  const { syncToCloud, isSyncing } = useAutoSync();
-
-  const handleSync = useCallback(async () => {
-    await syncToCloud();
-  }, [syncToCloud]);
-
   return (
     <>
       <header className="sticky top-0 z-30 h-16 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
@@ -51,7 +43,6 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
 
           {/* Right side - Actions */}
           <div className="flex items-center gap-1 sm:gap-2">
-            <SyncButton onClick={handleSync} isLoading={isSyncing} />
             <NotificationsPanel />
             <UserAvatar user={user} size="sm" />
           </div>

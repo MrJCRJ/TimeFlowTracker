@@ -3,7 +3,6 @@ import { getSession } from '@/lib/auth';
 import { validateEnvironment } from '@/lib/env-validation';
 import { Providers } from '../providers';
 import { TimerNotifications } from '@/components/notifications/TimerNotifications';
-import { TimerSync } from '@/components/timer/TimerSync';
 import { DashboardLayoutClient } from './DashboardLayoutClient';
 
 interface DashboardLayoutProps {
@@ -33,9 +32,6 @@ export default async function DashboardLayout({ children }: DashboardLayoutProps
 
       {/* Timer Notifications */}
       <TimerNotifications />
-
-      {/* Timer Sync (auto-sync e persistência) */}
-      <TimerSync />
     </Providers>
   );
 }

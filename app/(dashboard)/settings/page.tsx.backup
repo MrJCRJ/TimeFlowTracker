@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import {
   ProfileSection,
@@ -17,8 +17,8 @@ import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 export default function SettingsPage() {
   const { data: session } = useSession();
-  const { reset: resetCategories } = useCategoryStore();
-  const { reset: resetTimer } = useTimerStore();
+  const { categories, reset: resetCategories } = useCategoryStore();
+  const { timeEntries, reset: resetTimer } = useTimerStore();
   const { addNotification } = useNotificationStore();
   const { theme, setTheme, isDark } = useTheme();
   const {
@@ -32,6 +32,41 @@ export default function SettingsPage() {
   const [isClearing, setIsClearing] = useState(false);
 
   // Verificar status da conexão com Google Drive
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const checkDriveConnection = async () => {
+      if (!session?.accessToken) {
+        setDriveConnected(false);
+        return;
+      }
+
+      try {
+        // Verificar conexão
+        const statusResponse = await fetch('/api/drive/status');
+        const statusData = await statusResponse.json();
+        setDriveConnected(statusData.connected);
+
+        // Buscar última sincronização do arquivo sync-metadata.json
+        const metadataResponse = await fetch('/api/drive/sync/metadata');
+        const metadataData = await metadataResponse.json();
+
+        if (metadataData.success && metadataData.data?.updatedAt) {
+          const lastSyncDate = new Date(metadataData.data.updatedAt);
+          const deviceInfo = metadataData.data.lastSyncDevice
+            ? ` (${metadataData.data.lastSyncDevice})`
+            : '';
+          setLastSync(lastSyncDate.toLocaleString('pt-BR') + deviceInfo);
+        } else if (statusData.lastBackup) {
+          setLastSync(new Date(statusData.lastBackup).toLocaleString('pt-BR'));
+        }
+      } catch (error) {
+        console.error('Erro ao verificar status do Drive:', error);
+        setDriveConnected(false);
+      }
+    };
+
+    checkDriveConnection();
   const handleClearData = async () => {
     if (confirm('Tem certeza que deseja limpar todos os dados? Esta ação não pode ser desfeita.')) {
       setIsClearing(true);
