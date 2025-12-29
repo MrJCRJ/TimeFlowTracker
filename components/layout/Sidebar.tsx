@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
@@ -24,9 +24,11 @@ const navItems = [
 export function Sidebar({ user, isOpen: externalIsOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const [internalIsOpen, setInternalIsOpen] = useState(false);
+  const isFirstRender = useRef(true);
 
   // Use external control if provided, otherwise use internal state
   const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
+
   const handleClose = useCallback(() => {
     if (onClose) {
       onClose();
@@ -35,10 +37,14 @@ export function Sidebar({ user, isOpen: externalIsOpen, onClose }: SidebarProps)
     }
   }, [onClose]);
 
-  // Close sidebar when route changes on mobile
+  // Close sidebar when route changes on mobile (but not on first render)
   useEffect(() => {
-    if (window.innerWidth < 1024) {
-      // lg breakpoint
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
       handleClose();
     }
   }, [pathname, handleClose]);
@@ -50,17 +56,21 @@ export function Sidebar({ user, isOpen: externalIsOpen, onClose }: SidebarProps)
         <div
           className="fixed inset-0 z-30 bg-black/60 backdrop-blur-sm lg:hidden"
           onClick={handleClose}
+          aria-hidden="true"
         />
       )}
 
       <aside
+        data-open={isOpen}
         className={cn(
-          'fixed left-0 top-0 z-40 h-screen w-[280px] flex-col border-r border-border bg-card transition-transform duration-300 ease-in-out sm:w-sidebar',
-          // Desktop: always visible
-          'lg:flex lg:translate-x-0',
-          // Mobile: slide in/out
-          'flex lg:static',
-          isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+          // Base styles
+          'fixed left-0 top-0 z-40 flex h-screen w-[280px] flex-col border-r border-border bg-card',
+          'transition-transform duration-300 ease-in-out',
+          'sm:w-sidebar',
+          // Mobile: slide in/out based on isOpen state
+          isOpen ? 'translate-x-0' : '-translate-x-full',
+          // Desktop: always visible and static
+          'lg:static lg:translate-x-0'
         )}
       >
         {/* Header with close button for mobile */}

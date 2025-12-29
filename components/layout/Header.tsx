@@ -22,10 +22,7 @@ export function Header({ user, onToggleSidebar }: HeaderProps) {
             {/* Menu button - Improved for mobile */}
             <button
               type="button"
-              onClick={() => {
-                console.log('Menu button clicked');
-                onToggleSidebar?.();
-              }}
+              onClick={onToggleSidebar}
               className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary transition-all duration-200 hover:bg-primary/20 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 active:scale-95 lg:hidden"
               aria-label="Abrir menu lateral"
             >

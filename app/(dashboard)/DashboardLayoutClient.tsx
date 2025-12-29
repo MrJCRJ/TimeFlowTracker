@@ -15,7 +15,7 @@ export function DashboardLayoutClient({ user, children }: DashboardLayoutClientP
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
+    setIsSidebarOpen((prev) => !prev);
   };
 
   const closeSidebar = () => {
