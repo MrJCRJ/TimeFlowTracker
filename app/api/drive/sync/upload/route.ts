@@ -62,8 +62,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       dailyGoals: {},
       theme: 'system',
       notifications: true,
-      autoSync: true,
-      syncInterval: 5,
       updatedAt: updatedAt || new Date().toISOString(),
     };
 

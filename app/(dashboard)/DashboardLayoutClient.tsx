@@ -23,7 +23,7 @@ export function DashboardLayoutClient({ user, children }: DashboardLayoutClientP
   };
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-background">
       {/* Sidebar */}
       <Sidebar user={user} isOpen={isSidebarOpen} onClose={closeSidebar} />
 
@@ -32,8 +32,8 @@ export function DashboardLayoutClient({ user, children }: DashboardLayoutClientP
         {/* Header */}
         <Header user={user} onToggleSidebar={toggleSidebar} />
 
-        {/* Page content */}
-        <main className="pb-timer flex-1 p-4 md:p-6">{children}</main>
+        {/* Page content - Improved mobile padding */}
+        <main className="pb-timer flex-1 p-3 sm:p-4 md:p-6">{children}</main>
 
         {/* Timer Bar */}
         <TimerBarWrapper userId={user.id} />

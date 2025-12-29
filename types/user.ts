@@ -16,8 +16,6 @@ export interface UserPreferences {
   dailyGoals: Record<string, number>; // categoryId -> minutos
   theme: Theme;
   notifications: boolean;
-  autoSync: boolean;
-  syncInterval: number; // minutos
   updatedAt: string;
 }
 
@@ -33,8 +31,6 @@ export interface UpdatePreferencesInput {
   dailyGoals?: Record<string, number>;
   theme?: Theme;
   notifications?: boolean;
-  autoSync?: boolean;
-  syncInterval?: number;
 }
 
 export const DEFAULT_PREFERENCES: Omit<UserPreferences, 'userId' | 'updatedAt'> = {
@@ -45,6 +41,4 @@ export const DEFAULT_PREFERENCES: Omit<UserPreferences, 'userId' | 'updatedAt'> 
   dailyGoals: {},
   theme: 'system',
   notifications: true,
-  autoSync: true,
-  syncInterval: 5,
 };

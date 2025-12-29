@@ -4,14 +4,6 @@ import type { Category, CreateCategoryInput, UpdateCategoryInput } from '@/types
 import { DEFAULT_CATEGORIES } from '@/types/category';
 import { generateId, now } from '@/lib/utils';
 import { STORAGE_KEYS } from '@/lib/constants';
-import { setLocalUpdatedAt } from '@/lib/sync/simple-sync';
-
-// Função auxiliar para marcar dados como atualizados
-const markUpdated = () => {
-  if (typeof window !== 'undefined') {
-    setLocalUpdatedAt(new Date().toISOString());
-  }
-};
 
 interface CategoryState {
   categories: Category[];
@@ -63,7 +55,6 @@ export const useCategoryStore = create<CategoryStore>()(
           categories: [...state.categories, newCategory],
         }));
 
-        markUpdated(); // Marcar como atualizado para sync
         return newCategory;
       },
 
@@ -79,14 +70,12 @@ export const useCategoryStore = create<CategoryStore>()(
               : cat
           ),
         }));
-        markUpdated(); // Marcar como atualizado para sync
       },
 
       deleteCategory: (id: string) => {
         set((state) => ({
           categories: state.categories.filter((cat) => cat.id !== id),
         }));
-        markUpdated(); // Marcar como atualizado para sync
       },
 
       getCategoryById: (id: string) => {
@@ -95,7 +84,6 @@ export const useCategoryStore = create<CategoryStore>()(
 
       setCategories: (categories: Category[]) => {
         set({ categories });
-        // Não marcar como atualizado aqui pois é usado pelo sync para sobrescrever dados
       },
 
       initializeDefaults: (userId: string) => {
@@ -109,7 +97,6 @@ export const useCategoryStore = create<CategoryStore>()(
             updatedAt: now(),
           }));
           set({ categories: defaultCategories });
-          markUpdated(); // Marcar como atualizado para sync
         }
       },
 

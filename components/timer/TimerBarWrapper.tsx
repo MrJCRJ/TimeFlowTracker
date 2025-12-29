@@ -1,6 +1,6 @@
 'use client';
 
-import { CloudTimerBar } from '@/components/timer/CloudTimerBar';
+import { TimerBar } from '@/components/timer/TimerBar';
 import { useCategoryStore } from '@/stores/categoryStore';
 
 interface TimerBarWrapperProps {
@@ -8,15 +8,14 @@ interface TimerBarWrapperProps {
 }
 
 /**
- * TimerBarWrapper - Wrapper que usa CloudTimerBar para sincronização via Drive
+ * TimerBarWrapper - Wrapper que usa TimerBar local
  *
- * Este componente utiliza o CloudTimerBar que sincroniza os timers entre
- * dispositivos através do Google Drive. Quando um timer é iniciado,
- * ele cria um arquivo de registro no Drive. Quando é parado (de qualquer
- * dispositivo), o registro é lido, a duração é calculada e salva.
+ * Este componente utiliza o TimerBar que funciona 100% localmente.
+ * Os dados são salvos no localStorage e podem ser sincronizados
+ * manualmente com o Google Drive através da página de configurações.
  */
 export function TimerBarWrapper({ userId }: TimerBarWrapperProps) {
   const { categories, isLoading } = useCategoryStore();
 
-  return <CloudTimerBar userId={userId} isLoading={isLoading && categories.length === 0} />;
+  return <TimerBar userId={userId} isLoading={isLoading && categories.length === 0} />;
 }

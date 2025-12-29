@@ -5,12 +5,11 @@ import { useSession } from 'next-auth/react';
 import { useTimerStore } from '@/stores/timerStore';
 import { useCategoryStore } from '@/stores/categoryStore';
 import { useNotificationStore } from '@/stores/notificationStore';
-import { SimpleSyncManager } from '@/lib/sync/simple-sync';
 import type { Category, TimeEntry } from '@/types';
 
 /**
  * Hook para sincronização MANUAL com Google Drive
- * Substitui o sistema automático por operações sob demanda
+ * Permite fazer backup e restaurar dados manualmente
  */
 export function useManualSync() {
   const { data: session } = useSession();
@@ -25,30 +24,6 @@ export function useManualSync() {
   const setTimeEntries = useTimerStore((s) => s.setTimeEntries);
   const categories = useCategoryStore((s) => s.categories);
   const setCategories = useCategoryStore((s) => s.setCategories);
-
-  // Instância do sync manager
-  const [syncManager] = useState(() => new SimpleSyncManager());
-
-  // Configurar callbacks
-  useState(() => {
-    if (syncManager) {
-      syncManager.configure({
-        getAccessToken: () => session?.accessToken || null,
-        getLocalData: () => ({
-          categories: categories as unknown[],
-          timeEntries: timeEntries as unknown[],
-        }),
-        setLocalData: ({ categories: newCategories, timeEntries: newEntries }) => {
-          if (newCategories && newCategories.length > 0) {
-            setCategories(newCategories as Category[]);
-          }
-          if (newEntries && newEntries.length > 0) {
-            setTimeEntries(newEntries as TimeEntry[]);
-          }
-        },
-      });
-    }
-  });
 
   /**
    * Faz backup manual dos dados locais para o Drive
@@ -66,34 +41,39 @@ export function useManualSync() {
     setIsBackingUp(true);
 
     try {
-      const result = await syncManager.forceUpload();
+      const response = await fetch('/api/drive/sync/upload', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          categories,
+          timeEntries,
+          updatedAt: new Date().toISOString(),
+        }),
+      });
 
-      if (result.success) {
-        addNotification({
-          type: 'success',
-          title: 'Backup Concluído',
-          message: 'Seus dados foram salvos no Google Drive',
-        });
-        return true;
-      } else {
-        addNotification({
-          type: 'error',
-          title: 'Erro no Backup',
-          message: result.message,
-        });
-        return false;
+      if (!response.ok) {
+        throw new Error('Falha ao enviar dados para o Drive');
       }
+
+      addNotification({
+        type: 'success',
+        title: 'Backup Concluído',
+        message: 'Seus dados foram salvos no Google Drive',
+      });
+      return true;
     } catch (error) {
       addNotification({
         type: 'error',
         title: 'Erro no Backup',
-        message: 'Falha ao salvar dados no Drive',
+        message: error instanceof Error ? error.message : 'Falha ao salvar dados no Drive',
       });
       return false;
     } finally {
       setIsBackingUp(false);
     }
-  }, [session?.accessToken, syncManager, addNotification]);
+  }, [session?.accessToken, categories, timeEntries, addNotification]);
 
   /**
    * Restaura dados do Drive (sobrescreve dados locais)
@@ -120,9 +100,23 @@ export function useManualSync() {
     setIsRestoring(true);
 
     try {
-      const result = await syncManager.forceDownload();
+      const response = await fetch('/api/drive/sync/download');
 
-      if (result.success) {
+      if (!response.ok) {
+        throw new Error('Falha ao baixar dados do Drive');
+      }
+
+      const result = await response.json();
+
+      if (result.success && result.data) {
+        // Atualizar stores com dados do Drive
+        if (result.data.categories && result.data.categories.length > 0) {
+          setCategories(result.data.categories as Category[]);
+        }
+        if (result.data.timeEntries && result.data.timeEntries.length > 0) {
+          setTimeEntries(result.data.timeEntries as TimeEntry[]);
+        }
+
         addNotification({
           type: 'success',
           title: 'Restauração Concluída',
@@ -131,9 +125,9 @@ export function useManualSync() {
         return true;
       } else {
         addNotification({
-          type: 'error',
-          title: 'Erro na Restauração',
-          message: result.message,
+          type: 'warning',
+          title: 'Nenhum dado encontrado',
+          message: 'Não há dados salvos no Google Drive',
         });
         return false;
       }
@@ -141,13 +135,13 @@ export function useManualSync() {
       addNotification({
         type: 'error',
         title: 'Erro na Restauração',
-        message: 'Falha ao carregar dados do Drive',
+        message: error instanceof Error ? error.message : 'Falha ao carregar dados do Drive',
       });
       return false;
     } finally {
       setIsRestoring(false);
     }
-  }, [session?.accessToken, syncManager, addNotification]);
+  }, [session?.accessToken, setCategories, setTimeEntries, addNotification]);
 
   return {
     backupToDrive,

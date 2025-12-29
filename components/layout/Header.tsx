@@ -15,27 +15,27 @@ interface HeaderProps {
 export function Header({ user, onToggleSidebar }: HeaderProps) {
   return (
     <>
-      <header className="sticky top-0 z-30 h-16 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
-        <div className="flex h-full items-center justify-between px-4 md:px-6">
+      <header className="sticky top-0 z-30 h-14 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 sm:h-16">
+        <div className="flex h-full items-center justify-between px-3 sm:px-4 md:px-6">
           {/* Left side - Menu and Logo */}
-          <div className="flex items-center gap-2">
-            {/* Menu button - Always visible on mobile/tablet, hidden on desktop */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Menu button - Improved for mobile */}
             <button
               type="button"
               onClick={() => {
                 console.log('Menu button clicked');
                 onToggleSidebar?.();
               }}
-              className="flex h-10 w-10 items-center justify-center rounded-md transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 active:bg-accent/80 lg:hidden"
+              className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary transition-all duration-200 hover:bg-primary/20 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 active:scale-95 lg:hidden"
               aria-label="Abrir menu lateral"
             >
-              <Menu className="h-6 w-6" />
+              <Menu className="h-6 w-6" strokeWidth={2.5} />
             </button>
 
             {/* Logo - Responsive sizing */}
             <Link href="/" className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-                <span className="text-sm font-bold text-primary-foreground">TF</span>
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary sm:h-9 sm:w-9">
+                <span className="text-sm font-bold text-primary-foreground sm:text-base">TF</span>
               </div>
               <span className="hidden font-semibold sm:inline">TimeFlow</span>
             </Link>

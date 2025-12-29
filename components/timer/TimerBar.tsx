@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useEffect, useCallback } from 'react';
-import { SyncIndicator } from '@/components/ui/SyncIndicator';
 import { LoadingState } from '@/components/ui/loading-state';
 import { cn, formatTime } from '@/lib/utils';
 import { useTimerStore } from '@/stores/timerStore';
@@ -49,7 +48,6 @@ interface TimerBarProps {
   className?: string;
   store?: TimerStoreState; // Para testes - sobrescreve o hook
   categories?: Category[]; // Opcional para testes
-  isSyncing?: boolean; // Indica se está sincronizando
   isLoading?: boolean; // Indica se está carregando dados iniciais
 }
 
@@ -61,13 +59,13 @@ interface TimerBarProps {
  * - Inicia timer ao clicar em categoria
  * - Mostra tempo decorrido em tempo real
  * - Permite parar timer ativo
+ * - Funciona 100% offline
  */
 export function TimerBar({
   userId,
   className,
   store,
   categories: propCategories,
-  isSyncing = false,
   isLoading = false,
 }: TimerBarProps) {
   // Sempre chama o hook, mas pode sobrescrever com props
@@ -229,29 +227,23 @@ export function TimerBar({
               <button
                 onClick={handleStopTimer}
                 className={cn(
-                  'flex items-center gap-2 rounded-lg px-4 py-2',
+                  'flex items-center gap-2 rounded-xl px-5 py-3 sm:rounded-lg sm:px-4 sm:py-2',
                   'bg-danger font-medium text-white',
                   'transition-all duration-200',
                   'hover:scale-105 hover:bg-danger/90',
+                  'active:scale-95',
                   'focus:outline-none focus-visible:ring-2 focus-visible:ring-danger'
                 )}
                 aria-label="Parar timer"
               >
-                <Square className="h-4 w-4" />
+                <Square className="h-5 w-5 sm:h-4 sm:w-4" />
                 <span>Parar</span>
               </button>
             ) : (
-              <div className="text-sm text-muted-foreground">
-                <Play className="h-5 w-5" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted/50 text-muted-foreground sm:h-8 sm:w-8">
+                <Play className="h-5 w-5 sm:h-4 sm:w-4" />
               </div>
             )}
-
-            {/* Indicador de sincronização */}
-            <SyncIndicator
-              lastSync={null} // TODO: conectar com hook de sync
-              isSyncing={isSyncing}
-              isOnline={true} // TODO: detectar status online
-            />
           </div>
         </div>
       </div>

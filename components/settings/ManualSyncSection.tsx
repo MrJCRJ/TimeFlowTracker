@@ -5,11 +5,10 @@ import { useSession } from 'next-auth/react';
 import { useManualSync } from '@/hooks/useManualSync';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { CloudUpload, CloudDownload, Loader2 } from 'lucide-react';
+import { CloudUpload, CloudDownload, Loader2, Info, Smartphone } from 'lucide-react';
 
 /**
  * Componente para sincronização manual com Google Drive
- * Substitui o sistema automático por botões manuais
  */
 export function ManualSyncSection() {
   const { data: session } = useSession();
@@ -19,7 +18,10 @@ export function ManualSyncSection() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Sincronização com Google Drive</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <CloudUpload className="h-5 w-5" />
+            Google Drive
+          </CardTitle>
           <CardDescription>
             Faça login para sincronizar seus dados com o Google Drive
           </CardDescription>
@@ -31,30 +33,39 @@ export function ManualSyncSection() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Sincronização com Google Drive</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <CloudUpload className="h-5 w-5 text-primary" />
+          Google Drive
+        </CardTitle>
         <CardDescription>
-          Faça backup dos seus dados ou restaure de um backup anterior. Todos os dados ficam
-          armazenados no seu Google Drive pessoal.
+          Faça backup ou restaure seus dados do Google Drive. O app funciona 100% offline - a
+          sincronização é opcional.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <CardContent className="space-y-6">
+        {/* Botões de ação */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {/* Botão de Backup */}
-          <div className="space-y-2">
-            <h4 className="font-medium">Fazer Backup</h4>
-            <p className="text-sm text-muted-foreground">
-              Salva todos os seus dados atuais no Google Drive
-            </p>
+          <div className="rounded-xl border border-border bg-card p-4 transition-colors hover:bg-muted/50">
+            <div className="mb-3 flex items-center gap-2">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                <CloudUpload className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h4 className="font-medium">Fazer Backup</h4>
+                <p className="text-xs text-muted-foreground">Salvar no Drive</p>
+              </div>
+            </div>
             <Button
               onClick={backupToDrive}
               disabled={isBackingUp || isRestoring}
               className="w-full"
-              variant="default"
+              size="lg"
             >
               {isBackingUp ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Fazendo Backup...
+                  Enviando...
                 </>
               ) : (
                 <>
@@ -66,16 +77,22 @@ export function ManualSyncSection() {
           </div>
 
           {/* Botão de Restauração */}
-          <div className="space-y-2">
-            <h4 className="font-medium">Restaurar Dados</h4>
-            <p className="text-sm text-muted-foreground">
-              Carrega dados salvos anteriormente do Google Drive
-            </p>
+          <div className="rounded-xl border border-border bg-card p-4 transition-colors hover:bg-muted/50">
+            <div className="mb-3 flex items-center gap-2">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary/10">
+                <CloudDownload className="h-5 w-5 text-secondary" />
+              </div>
+              <div>
+                <h4 className="font-medium">Restaurar</h4>
+                <p className="text-xs text-muted-foreground">Baixar do Drive</p>
+              </div>
+            </div>
             <Button
               onClick={restoreFromDrive}
               disabled={isBackingUp || isRestoring}
               className="w-full"
               variant="outline"
+              size="lg"
             >
               {isRestoring ? (
                 <>
@@ -85,7 +102,7 @@ export function ManualSyncSection() {
               ) : (
                 <>
                   <CloudDownload className="mr-2 h-4 w-4" />
-                  Restaurar Dados
+                  Restaurar
                 </>
               )}
             </Button>
@@ -93,13 +110,24 @@ export function ManualSyncSection() {
         </div>
 
         {/* Informações adicionais */}
-        <div className="mt-6 rounded-lg bg-muted p-4">
-          <h5 className="mb-2 font-medium">ℹ️ Sobre a Sincronização</h5>
-          <ul className="space-y-1 text-sm text-muted-foreground">
-            <li>• Os dados ficam armazenados apenas no seu Google Drive</li>
-            <li>• Você controla quando fazer backup ou restaurar</li>
-            <li>• Restauração sobrescreve todos os dados locais atuais</li>
-            <li>• Funciona offline - sincronização é opcional</li>
+        <div className="rounded-xl bg-muted/50 p-4">
+          <div className="mb-3 flex items-center gap-2">
+            <Info className="h-4 w-4 text-muted-foreground" />
+            <h5 className="text-sm font-medium">Como funciona</h5>
+          </div>
+          <ul className="space-y-2 text-sm text-muted-foreground">
+            <li className="flex items-start gap-2">
+              <Smartphone className="mt-0.5 h-4 w-4 flex-shrink-0" />
+              <span>O app funciona 100% offline - seus dados ficam salvos no dispositivo</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <CloudUpload className="mt-0.5 h-4 w-4 flex-shrink-0" />
+              <span>Use o backup para salvar uma cópia no seu Google Drive</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <CloudDownload className="mt-0.5 h-4 w-4 flex-shrink-0" />
+              <span>Restauração sobrescreve os dados locais com os do Drive</span>
+            </li>
           </ul>
         </div>
       </CardContent>

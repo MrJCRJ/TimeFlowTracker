@@ -2,14 +2,6 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { TimeEntry, TimerState } from '@/types';
 import { generateId, now, diffInSeconds } from '@/lib/utils';
-import { setLocalUpdatedAt } from '@/lib/sync/simple-sync';
-
-// Função auxiliar para marcar dados como atualizados
-const markUpdated = () => {
-  if (typeof window !== 'undefined') {
-    setLocalUpdatedAt(new Date().toISOString());
-  }
-};
 
 interface TimerStoreState {
   isRunning: boolean;
@@ -84,7 +76,6 @@ export const useTimerStore = create<TimerStore>()(
           elapsedSeconds: 0,
         });
 
-        markUpdated(); // Marcar como atualizado para sync
         return newEntry;
       },
 
@@ -110,7 +101,6 @@ export const useTimerStore = create<TimerStore>()(
           timeEntries: [...state.timeEntries, completedEntry],
         }));
 
-        markUpdated(); // Marcar como atualizado para sync
         return completedEntry;
       },
 
@@ -142,7 +132,6 @@ export const useTimerStore = create<TimerStore>()(
         set((state: TimerStoreState) => ({
           timeEntries: [...state.timeEntries, entry],
         }));
-        markUpdated();
       },
 
       updateTimeEntry: (id: string, updates: Partial<TimeEntry>) => {
@@ -151,14 +140,12 @@ export const useTimerStore = create<TimerStore>()(
             entry.id === id ? { ...entry, ...updates, updatedAt: now() } : entry
           ),
         }));
-        markUpdated();
       },
 
       deleteTimeEntry: (id: string) => {
         set((state: TimerStoreState) => ({
           timeEntries: state.timeEntries.filter((entry: TimeEntry) => entry.id !== id),
         }));
-        markUpdated();
       },
 
       setTimeEntries: (entries: TimeEntry[]) => {
