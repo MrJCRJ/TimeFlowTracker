@@ -1,33 +1,50 @@
 /**
  * TDD: TimerBar Component Tests
  *
- * Ciclo TDD:
- * 1. ✅ Escrever testes (RED - devem falhar)
- * 2. ⏳ Implementar componente (GREEN - testes passam)
- * 3. ⏳ Refatorar mantendo testes verdes
- *
- * Comportamentos esperados:
- * - Renderiza corretamente com categorias
- * - Permite selecionar categoria para iniciar timer
- * - Mostra tempo decorrido quando timer ativo
- * - Permite parar timer ativo
- * - Persiste estado no localStorage
- * - Formata tempo corretamente (HH:MM:SS)
+ * Testes para a nova interface do TimerBar:
+ * - Botão "Iniciar" que abre picker de categorias
+ * - Timer inicia imediatamente ao selecionar categoria
+ * - Painel de tarefas aparece durante timer ativo
+ * - Botão "Parar" para finalizar timer
  */
 
 import React from 'react';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { TimerBar } from '@/components/timer/TimerBar';
 import type { Category } from '@/types';
 
-// Mock do useCategoryStore - deve vir antes dos imports que o usam
-const mockInitializeDefaults = jest.fn();
+// Mock do useCategoryStore
 jest.mock('@/stores/categoryStore', () => ({
   useCategoryStore: () => ({
     categories: [],
-    initializeDefaults: mockInitializeDefaults,
-    getCategoryById: jest.fn(),
+    initializeDefaults: jest.fn(),
+    getCategoryById: jest.fn((id: string) => {
+      const categories: Record<string, Category> = {
+        'cat-1': {
+          id: 'cat-1',
+          name: 'Trabalho',
+          color: '#3b82f6',
+          icon: 'briefcase',
+          isDefault: true,
+          userId: 'user-1',
+          createdAt: '2024-01-01T00:00:00.000Z',
+          updatedAt: '2024-01-01T00:00:00.000Z',
+        },
+      };
+      return categories[id];
+    }),
+  }),
+}));
+
+// Mock do useTaskStore
+jest.mock('@/stores/taskStore', () => ({
+  useTaskStore: () => ({
+    tasks: [],
+    getTasksByCategory: jest.fn(() => []),
+    toggleTaskCompletion: jest.fn(),
+    addTask: jest.fn(),
+    updateTask: jest.fn(),
   }),
 }));
 
@@ -83,16 +100,6 @@ const mockCategories: Category[] = [
     createdAt: '2024-01-01T00:00:00.000Z',
     updatedAt: '2024-01-01T00:00:00.000Z',
   },
-  {
-    id: 'cat-3',
-    name: 'Exercício',
-    color: '#22c55e',
-    icon: 'dumbbell',
-    isDefault: true,
-    userId: 'user-1',
-    createdAt: '2024-01-01T00:00:00.000Z',
-    updatedAt: '2024-01-01T00:00:00.000Z',
-  },
 ];
 
 // Mock do useTimerStore
@@ -125,22 +132,13 @@ describe('TimerBar', () => {
     it('deve renderizar o componente corretamente', () => {
       render(<TimerBar categories={mockCategories} userId="user-1" store={mockStore} />);
 
-      // Verifica se o componente existe
       expect(screen.getByTestId('timer-bar')).toBeInTheDocument();
     });
 
-    it('deve mostrar texto indicando para selecionar categoria quando timer inativo', () => {
+    it('deve mostrar botão Iniciar quando timer inativo', () => {
       render(<TimerBar categories={mockCategories} userId="user-1" store={mockStore} />);
 
-      expect(screen.getByText(/selecione uma categoria/i)).toBeInTheDocument();
-    });
-
-    it('deve renderizar botões de categorias', () => {
-      render(<TimerBar categories={mockCategories} userId="user-1" store={mockStore} />);
-
-      expect(screen.getByText('Trabalho')).toBeInTheDocument();
-      expect(screen.getByText('Estudo')).toBeInTheDocument();
-      expect(screen.getByText('Exercício')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /iniciar/i })).toBeInTheDocument();
     });
 
     it('deve mostrar tempo zerado (00:00) quando timer inativo', () => {
@@ -151,21 +149,44 @@ describe('TimerBar', () => {
   });
 
   describe('Iniciar timer', () => {
-    it('deve chamar startTimer quando categoria é clicada', async () => {
+    it('deve abrir picker de categorias ao clicar em Iniciar', async () => {
       const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
 
       render(<TimerBar categories={mockCategories} userId="user-1" store={mockStore} />);
 
-      const trabalhoButton = screen.getByRole('button', { name: /trabalho/i });
+      const iniciarButton = screen.getByRole('button', { name: /iniciar/i });
+      await user.click(iniciarButton);
+
+      // Deve mostrar o picker de categorias
+      expect(screen.getByText('Selecionar Categoria')).toBeInTheDocument();
+    });
+
+    it('deve mostrar categorias no picker', async () => {
+      const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+
+      render(<TimerBar categories={mockCategories} userId="user-1" store={mockStore} />);
+
+      const iniciarButton = screen.getByRole('button', { name: /iniciar/i });
+      await user.click(iniciarButton);
+
+      expect(screen.getByText('Trabalho')).toBeInTheDocument();
+      expect(screen.getByText('Estudo')).toBeInTheDocument();
+    });
+
+    it('deve iniciar timer ao selecionar categoria', async () => {
+      const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+
+      render(<TimerBar categories={mockCategories} userId="user-1" store={mockStore} />);
+
+      // Abre picker
+      const iniciarButton = screen.getByRole('button', { name: /iniciar/i });
+      await user.click(iniciarButton);
+
+      // Seleciona categoria
+      const trabalhoButton = screen.getByText('Trabalho');
       await user.click(trabalhoButton);
 
       expect(mockStore.startTimer).toHaveBeenCalledWith('cat-1', 'user-1');
-    });
-
-    it('deve mostrar categoria ativa quando timer ativo', () => {
-      render(<TimerBar categories={mockCategories} userId="user-1" store={activeStore} />);
-
-      expect(screen.getByText(/registrando: trabalho/i)).toBeInTheDocument();
     });
   });
 
@@ -190,12 +211,6 @@ describe('TimerBar', () => {
         stopTimer: mockStopTimer,
         updateElapsed: mockUpdateElapsed,
       });
-    });
-
-    it('deve mostrar mensagem de "Registrando: [categoria]" quando timer ativo', () => {
-      render(<TimerBar categories={mockCategories} userId="user-1" store={activeStore} />);
-
-      expect(screen.getByText(/registrando: trabalho/i)).toBeInTheDocument();
     });
 
     it('deve mostrar tempo decorrido formatado corretamente', () => {
@@ -271,7 +286,6 @@ describe('TimerBar', () => {
 
       render(<TimerBar categories={mockCategories} userId="user-1" />);
 
-      // Avança 3 segundos
       act(() => {
         jest.advanceTimersByTime(3000);
       });
@@ -312,15 +326,6 @@ describe('TimerBar', () => {
 
       expect(screen.getByLabelText(/barra de timer/i)).toBeInTheDocument();
     });
-
-    it('botões de categoria devem ser focáveis por teclado', () => {
-      render(<TimerBar categories={mockCategories} userId="user-1" store={mockStore} />);
-
-      const buttons = screen.getAllByRole('button');
-      buttons.forEach((button) => {
-        expect(button).not.toHaveAttribute('tabindex', '-1');
-      });
-    });
   });
 
   describe('Estados de erro', () => {
@@ -335,21 +340,8 @@ describe('TimerBar', () => {
     it('deve mostrar LoadingState quando está carregando', () => {
       render(<TimerBar categories={[]} userId="user-1" store={mockStore} isLoading={true} />);
 
-      // Verifica se o LoadingState está sendo renderizado
       expect(screen.getByTestId('timer-bar')).toBeInTheDocument();
-
-      // Verifica se não mostra a mensagem de "nenhuma categoria"
       expect(screen.queryByText(/nenhuma categoria disponível/i)).not.toBeInTheDocument();
-    });
-
-    it('deve mostrar categorias quando não está carregando', () => {
-      render(
-        <TimerBar categories={mockCategories} userId="user-1" store={mockStore} isLoading={false} />
-      );
-
-      // Verifica se as categorias são mostradas
-      expect(screen.getByText('Trabalho')).toBeInTheDocument();
-      expect(screen.getByText('Estudo')).toBeInTheDocument();
     });
   });
 });

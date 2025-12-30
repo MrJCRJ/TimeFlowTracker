@@ -1,9 +1,8 @@
 import { google, drive_v3 } from 'googleapis';
 import { DriveFolderManager } from './folder-manager';
 import { DriveFileManager } from './file-manager';
-import { ActiveTimerManager } from './active-timer-manager';
 import { DRIVE_FILES } from '../constants';
-import type { Category, TimeEntry, UserPreferences, DeviceInfo, ActiveTimerRecord } from '@/types';
+import type { Category, TimeEntry, UserPreferences } from '@/types';
 
 /**
  * Resultado da verificação de dados do Drive
@@ -23,7 +22,6 @@ export class GoogleDriveService {
   private drive: drive_v3.Drive;
   private folderManager: DriveFolderManager;
   private fileManager: DriveFileManager;
-  private activeTimerManager: ActiveTimerManager;
 
   constructor(accessToken: string) {
     const auth = new google.auth.OAuth2();
@@ -31,11 +29,6 @@ export class GoogleDriveService {
     this.drive = google.drive({ version: 'v3', auth });
     this.folderManager = new DriveFolderManager(this.drive, accessToken);
     this.fileManager = new DriveFileManager(this.drive, this.folderManager);
-    this.activeTimerManager = new ActiveTimerManager(
-      this.drive,
-      this.folderManager,
-      this.fileManager
-    );
   }
 
   /**
@@ -157,60 +150,6 @@ export class GoogleDriveService {
     });
   }
 
-  // ==================== Métodos de Timer Ativo ====================
-
-  /**
-   * Registra início de um timer no Drive
-   * Permite sincronização entre múltiplos dispositivos
-   */
-  async startActiveTimer(
-    categoryId: string,
-    userId: string,
-    deviceInfo: DeviceInfo,
-    notes?: string
-  ): Promise<ActiveTimerRecord> {
-    return this.activeTimerManager.registerTimerStart(categoryId, userId, deviceInfo, notes);
-  }
-
-  /**
-   * Para um timer ativo e retorna o TimeEntry completo
-   */
-  async stopActiveTimer(
-    categoryId: string,
-    deviceInfo: DeviceInfo,
-    notes?: string
-  ): Promise<TimeEntry | null> {
-    return this.activeTimerManager.stopTimer(categoryId, deviceInfo, notes);
-  }
-
-  /**
-   * Obtém timer ativo de uma categoria
-   */
-  async getActiveTimer(categoryId: string): Promise<ActiveTimerRecord | null> {
-    return this.activeTimerManager.getActiveTimer(categoryId);
-  }
-
-  /**
-   * Lista todos os timers ativos no Drive
-   */
-  async listActiveTimers(): Promise<ActiveTimerRecord[]> {
-    return this.activeTimerManager.listActiveTimers();
-  }
-
-  /**
-   * Cancela um timer sem registrar entrada
-   */
-  async cancelActiveTimer(categoryId: string): Promise<boolean> {
-    return this.activeTimerManager.cancelTimer(categoryId);
-  }
-
-  /**
-   * Limpa todos os timers ativos (útil para reset)
-   */
-  async clearAllActiveTimers(): Promise<number> {
-    return this.activeTimerManager.clearAllActiveTimers();
-  }
-
   // ==================== Métodos de Sincronização ====================
 
   /**
@@ -286,9 +225,6 @@ export class GoogleDriveService {
    * Limpa todos os dados do Drive (para reset)
    */
   async clearAll(): Promise<{ deletedCount: number }> {
-    // Limpa timers ativos também
-    await this.clearAllActiveTimers();
-
     // Deleta todos os arquivos na pasta (incluindo os antigos)
     const deletedCount = await this.fileManager.deleteAllFiles();
 
@@ -308,5 +244,4 @@ export function createDriveService(accessToken: string): GoogleDriveService {
 
 // Re-exportar para limpeza de cache
 export { DriveFolderManager } from './folder-manager';
-export { ActiveTimerManager } from './active-timer-manager';
 export { DriveFileManager, type FileVerificationResult } from './file-manager';

@@ -79,24 +79,53 @@ export const CATEGORY_COLORS = [
   { name: 'Ciano', value: '#06b6d4' },
 ] as const;
 
-// Ícones disponíveis para categorias
+// Ícones disponíveis para categorias - Organizados por tipo
 export const CATEGORY_ICONS = [
-  { name: 'Trabalho', value: 'briefcase' },
-  { name: 'Estudo', value: 'book' },
-  { name: 'Exercício', value: 'dumbbell' },
-  { name: 'Lazer', value: 'gamepad-2' },
-  { name: 'Sono', value: 'moon' },
-  { name: 'Alimentação', value: 'utensils' },
-  { name: 'Transporte', value: 'car' },
-  { name: 'Outros', value: 'folder' },
-  { name: 'Código', value: 'code' },
-  { name: 'Música', value: 'music' },
-  { name: 'Vídeo', value: 'video' },
-  { name: 'Chat', value: 'message-circle' },
-  { name: 'Email', value: 'mail' },
-  { name: 'Reunião', value: 'users' },
-  { name: 'Saúde', value: 'heart' },
-  { name: 'Compras', value: 'shopping-cart' },
+  // 💼 Trabalho & Produtividade
+  { name: 'Trabalho', value: 'briefcase', category: 'work' },
+  { name: 'Código', value: 'code', category: 'work' },
+  { name: 'Reunião', value: 'users', category: 'work' },
+  { name: 'Email', value: 'mail', category: 'work' },
+  { name: 'Chat', value: 'message-circle', category: 'work' },
+  { name: 'Apresentação', value: 'presentation', category: 'work' },
+  { name: 'Documentos', value: 'file-text', category: 'work' },
+
+  // 📚 Estudo & Aprendizado
+  { name: 'Estudo', value: 'book', category: 'study' },
+  { name: 'Leitura', value: 'book-open', category: 'study' },
+  { name: 'Graduação', value: 'graduation-cap', category: 'study' },
+  { name: 'Pesquisa', value: 'search', category: 'study' },
+
+  // 🏃 Saúde & Bem-estar
+  { name: 'Exercício', value: 'dumbbell', category: 'health' },
+  { name: 'Saúde', value: 'heart', category: 'health' },
+  { name: 'Sono', value: 'moon', category: 'health' },
+  { name: 'Meditação', value: 'sparkles', category: 'health' },
+
+  // 🎮 Lazer & Entretenimento
+  { name: 'Lazer', value: 'gamepad-2', category: 'leisure' },
+  { name: 'Música', value: 'music', category: 'leisure' },
+  { name: 'Vídeo', value: 'video', category: 'leisure' },
+  { name: 'TV', value: 'tv', category: 'leisure' },
+
+  // 🏠 Casa & Pessoal
+  { name: 'Alimentação', value: 'utensils', category: 'personal' },
+  { name: 'Compras', value: 'shopping-cart', category: 'personal' },
+  { name: 'Casa', value: 'home', category: 'personal' },
+  { name: 'Transporte', value: 'car', category: 'personal' },
+
+  // 📁 Outros
+  { name: 'Outros', value: 'folder', category: 'other' },
+] as const;
+
+// Categorias de ícones para agrupamento visual
+export const ICON_CATEGORIES = [
+  { id: 'work', name: '💼 Trabalho' },
+  { id: 'study', name: '📚 Estudo' },
+  { id: 'health', name: '🏃 Saúde' },
+  { id: 'leisure', name: '🎮 Lazer' },
+  { id: 'personal', name: '🏠 Pessoal' },
+  { id: 'other', name: '📁 Outros' },
 ] as const;
 
 // Erros

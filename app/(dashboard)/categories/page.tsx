@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useCategoryStore } from '@/stores/categoryStore';
 import { CategoryForm, TaskList } from '@/components/categories';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,6 +27,9 @@ export default function CategoriesPage() {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [expandedTasksId, setExpandedTasksId] = useState<string | null>(null);
+
+  // Ref para scroll automático ao editar
+  const editFormRef = useRef<HTMLDivElement>(null);
 
   // Initialize default categories
   useEffect(() => {
@@ -81,6 +84,14 @@ export default function CategoriesPage() {
   const handleEditClick = (category: Category) => {
     setEditingCategory(category);
     setIsFormOpen(false);
+
+    // Scroll suave até o formulário de edição
+    setTimeout(() => {
+      editFormRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    }, 100);
   };
 
   const handleCancelForm = () => {
@@ -129,7 +140,7 @@ export default function CategoriesPage() {
 
       {/* Edit Form */}
       {editingCategory && (
-        <Card className="border-primary">
+        <Card ref={editFormRef} className="border-primary">
           <CardHeader>
             <CardTitle>Editar Categoria</CardTitle>
           </CardHeader>

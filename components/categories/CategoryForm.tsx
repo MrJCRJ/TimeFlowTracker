@@ -3,11 +3,14 @@
 import React, { useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { categorySchema, type CategoryInput } from '@/lib/validations';
-import { CATEGORY_COLORS, CATEGORY_ICONS } from '@/lib/constants';
+import { CATEGORY_COLORS, CATEGORY_ICONS, ICON_CATEGORIES } from '@/lib/constants';
 import type { Category } from '@/types';
 import {
   Briefcase,
   Book,
+  BookOpen,
+  GraduationCap,
+  Search,
   Dumbbell,
   Gamepad2,
   Moon,
@@ -17,11 +20,16 @@ import {
   Code,
   Music,
   Video,
+  Tv,
   MessageCircle,
   Mail,
   Users,
   Heart,
   ShoppingCart,
+  Home,
+  Presentation,
+  FileText,
+  Sparkles,
   Loader2,
   LucideIcon,
 } from 'lucide-react';
@@ -30,6 +38,9 @@ import {
 const iconMap: Record<string, LucideIcon> = {
   briefcase: Briefcase,
   book: Book,
+  'book-open': BookOpen,
+  'graduation-cap': GraduationCap,
+  search: Search,
   dumbbell: Dumbbell,
   'gamepad-2': Gamepad2,
   moon: Moon,
@@ -39,11 +50,16 @@ const iconMap: Record<string, LucideIcon> = {
   code: Code,
   music: Music,
   video: Video,
+  tv: Tv,
   'message-circle': MessageCircle,
   mail: Mail,
   users: Users,
   heart: Heart,
   'shopping-cart': ShoppingCart,
+  home: Home,
+  presentation: Presentation,
+  'file-text': FileText,
+  sparkles: Sparkles,
 };
 
 interface CategoryFormProps {
@@ -60,7 +76,7 @@ interface FormErrors {
 
 /**
  * CategoryForm - Formulário para criar/editar categorias
- * 
+ *
  * Funcionalidades:
  * - Campos para nome, cor e ícone
  * - Validação em tempo real
@@ -121,9 +137,7 @@ export function CategoryForm({ category, onSubmit, onCancel }: CategoryFormProps
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Título */}
-      <h2 className="text-xl font-semibold">
-        {isEditing ? 'Editar Categoria' : 'Nova Categoria'}
-      </h2>
+      <h2 className="text-xl font-semibold">{isEditing ? 'Editar Categoria' : 'Nova Categoria'}</h2>
 
       {/* Campo Nome */}
       <div className="space-y-2">
@@ -141,7 +155,7 @@ export function CategoryForm({ category, onSubmit, onCancel }: CategoryFormProps
           aria-invalid={!!errors.name}
           aria-describedby={errors.name ? 'name-error' : undefined}
           className={cn(
-            'w-full px-3 py-2 rounded-lg border bg-background',
+            'w-full rounded-lg border bg-background px-3 py-2',
             'focus:outline-none focus:ring-2 focus:ring-ring',
             errors.name ? 'border-danger' : 'border-input'
           )}
@@ -170,7 +184,7 @@ export function CategoryForm({ category, onSubmit, onCancel }: CategoryFormProps
               className={cn(
                 'h-8 w-8 rounded-full transition-all duration-200',
                 'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                color === colorOption.value && 'ring-2 ring-offset-2 ring-primary'
+                color === colorOption.value && 'ring-2 ring-primary ring-offset-2'
               )}
               style={{ backgroundColor: colorOption.value }}
               title={colorOption.name}
@@ -178,7 +192,7 @@ export function CategoryForm({ category, onSubmit, onCancel }: CategoryFormProps
           ))}
         </div>
         {/* Input manual de cor */}
-        <div className="flex items-center gap-2 mt-2">
+        <div className="mt-2 flex items-center gap-2">
           <input
             id="category-color"
             type="text"
@@ -187,7 +201,7 @@ export function CategoryForm({ category, onSubmit, onCancel }: CategoryFormProps
             placeholder="#RRGGBB"
             aria-label="Cor"
             className={cn(
-              'w-32 px-3 py-1.5 rounded border bg-background text-sm font-mono',
+              'w-32 rounded border bg-background px-3 py-1.5 font-mono text-sm',
               'focus:outline-none focus:ring-2 focus:ring-ring',
               errors.color ? 'border-danger' : 'border-input'
             )}
@@ -197,53 +211,61 @@ export function CategoryForm({ category, onSubmit, onCancel }: CategoryFormProps
             style={{ backgroundColor: color }}
           />
         </div>
-        {errors.color && (
-          <p className="text-sm text-danger">{errors.color}</p>
-        )}
+        {errors.color && <p className="text-sm text-danger">{errors.color}</p>}
       </div>
 
       {/* Campo Ícone */}
-      <div className="space-y-2">
+      <div className="space-y-3">
         <label className="block text-sm font-medium">
           Ícone <span className="text-danger">*</span>
         </label>
-        <div 
-          className="flex flex-wrap gap-2"
-          role="group"
-          aria-label="Ícone"
-        >
-          {CATEGORY_ICONS.map((iconOption) => (
-            <button
-              key={iconOption.value}
-              type="button"
-              data-testid="icon-option"
-              onClick={() => setIcon(iconOption.value)}
-              aria-label={`Ícone ${iconOption.name}`}
-              className={cn(
-                'flex items-center justify-center h-10 w-10 rounded-lg border',
-                'transition-all duration-200',
-                'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                icon === iconOption.value
-                  ? 'border-primary bg-primary/10 ring-2 ring-primary/20'
-                  : 'border-border hover:border-primary/50'
-              )}
-              title={iconOption.name}
-            >
-              {renderIcon(iconOption.value, 'md')}
-            </button>
-          ))}
+
+        {/* Ícones agrupados por categoria */}
+        <div className="space-y-3" role="group" aria-label="Ícone">
+          {ICON_CATEGORIES.map((iconCategory) => {
+            const iconsInCategory = CATEGORY_ICONS.filter((i) => i.category === iconCategory.id);
+
+            if (iconsInCategory.length === 0) return null;
+
+            return (
+              <div key={iconCategory.id} className="space-y-1.5">
+                <p className="text-xs font-medium text-muted-foreground">{iconCategory.name}</p>
+                <div className="flex flex-wrap gap-2">
+                  {iconsInCategory.map((iconOption) => (
+                    <button
+                      key={iconOption.value}
+                      type="button"
+                      data-testid="icon-option"
+                      onClick={() => setIcon(iconOption.value)}
+                      aria-label={`Ícone ${iconOption.name}`}
+                      className={cn(
+                        'flex h-10 w-10 items-center justify-center rounded-lg border',
+                        'transition-all duration-200',
+                        'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                        icon === iconOption.value
+                          ? 'border-primary bg-primary/10 ring-2 ring-primary/20'
+                          : 'border-border hover:border-primary/50'
+                      )}
+                      title={iconOption.name}
+                    >
+                      {renderIcon(iconOption.value, 'md')}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </div>
-        {errors.icon && (
-          <p className="text-sm text-danger">{errors.icon}</p>
-        )}
+
+        {errors.icon && <p className="text-sm text-danger">{errors.icon}</p>}
       </div>
 
       {/* Preview */}
-      <div className="p-4 rounded-lg border border-border bg-muted/30">
-        <p className="text-sm text-muted-foreground mb-2">Preview</p>
+      <div className="rounded-lg border border-border bg-muted/30 p-4">
+        <p className="mb-2 text-sm text-muted-foreground">Preview</p>
         <div className="flex items-center gap-2">
           <div
-            className="flex items-center justify-center h-8 w-8 rounded-lg"
+            className="flex h-8 w-8 items-center justify-center rounded-lg"
             style={{ backgroundColor: color + '20' }}
           >
             <span style={{ color }}>{renderIcon(icon, 'md')}</span>
@@ -259,10 +281,10 @@ export function CategoryForm({ category, onSubmit, onCancel }: CategoryFormProps
           onClick={onCancel}
           disabled={isSubmitting}
           className={cn(
-            'px-4 py-2 rounded-lg border border-border',
+            'rounded-lg border border-border px-4 py-2',
             'transition-colors duration-200',
             'hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-            'disabled:opacity-50 disabled:cursor-not-allowed'
+            'disabled:cursor-not-allowed disabled:opacity-50'
           )}
         >
           Cancelar
@@ -271,11 +293,11 @@ export function CategoryForm({ category, onSubmit, onCancel }: CategoryFormProps
           type="submit"
           disabled={isSubmitting}
           className={cn(
-            'flex items-center gap-2 px-4 py-2 rounded-lg',
-            'bg-primary text-primary-foreground font-medium',
+            'flex items-center gap-2 rounded-lg px-4 py-2',
+            'bg-primary font-medium text-primary-foreground',
             'transition-colors duration-200',
             'hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-            'disabled:opacity-50 disabled:cursor-not-allowed'
+            'disabled:cursor-not-allowed disabled:opacity-50'
           )}
         >
           {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}

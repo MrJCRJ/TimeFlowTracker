@@ -1,4 +1,12 @@
-import type { DeviceInfo } from '@/types';
+/**
+ * Informações do dispositivo
+ */
+export interface DeviceInfo {
+  deviceId: string;
+  deviceName: string;
+  platform: string;
+  userAgent: string;
+}
 
 /**
  * Gera identificador único do dispositivo

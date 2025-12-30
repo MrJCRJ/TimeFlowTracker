@@ -1,9 +1,15 @@
 /**
- * Módulo de sincronização inteligente
+ * Módulo de sincronização manual
  *
- * Exporta o SyncManager e utilitários relacionados
+ * Exporta funções de sincronização baseadas em timestamp
  */
 
-export { SyncManager, syncManager } from './sync-manager';
-export type { SyncManagerConfig } from './config/sync-config';
-export type { SyncResult } from './types/sync-types';
+export {
+  getLocalUpdatedAt,
+  setLocalUpdatedAt,
+  compareSyncTimestamps,
+  type SyncMetadata,
+  type SyncData,
+  type SyncCompareResult,
+  type SimpleSyncResult,
+} from './simple-sync';

@@ -63,7 +63,8 @@ describe('TimerStore', () => {
     it('deve aceitar notas opcionais', () => {
       const { startTimer } = useTimerStore.getState();
 
-      const entry = startTimer('cat-1', 'user-1', 'Minhas notas');
+      // O terceiro parâmetro é taskId, o quarto é notes
+      const entry = startTimer('cat-1', 'user-1', undefined, 'Minhas notas');
 
       expect(entry.notes).toBe('Minhas notas');
     });
