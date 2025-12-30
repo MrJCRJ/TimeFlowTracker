@@ -14,7 +14,7 @@ interface TimerStoreState {
 
 interface TimerStoreActions {
   // Timer controls
-  startTimer: (categoryId: string, userId: string, notes?: string) => TimeEntry;
+  startTimer: (categoryId: string, userId: string, taskId?: string, notes?: string) => TimeEntry;
   stopTimer: (notes?: string) => TimeEntry | null;
   updateElapsed: () => void;
   restoreActiveTimer: (entry: TimeEntry) => void; // Restaurar timer ativo da nuvem
@@ -52,7 +52,7 @@ export const useTimerStore = create<TimerStore>()(
     (set, get) => ({
       ...initialState,
 
-      startTimer: (categoryId: string, userId: string, notes?: string) => {
+      startTimer: (categoryId: string, userId: string, taskId?: string, notes?: string) => {
         const existingActive = get().activeEntry;
         if (existingActive) {
           throw new Error('Timer já está rodando');
@@ -61,6 +61,7 @@ export const useTimerStore = create<TimerStore>()(
         const newEntry: TimeEntry = {
           id: generateId(),
           categoryId,
+          taskId,
           startTime: now(),
           endTime: null,
           duration: null,

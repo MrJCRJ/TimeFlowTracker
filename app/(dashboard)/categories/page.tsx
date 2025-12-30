@@ -2,12 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { useCategoryStore } from '@/stores/categoryStore';
-import { CategoryForm } from '@/components/categories/CategoryForm';
+import { CategoryForm, TaskList } from '@/components/categories';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useTimerStore } from '@/stores/timerStore';
 import { formatDuration, isThisWeek, isToday } from '@/lib/utils';
-import { Plus, Edit, Trash2, Clock } from 'lucide-react';
+import { Plus, Edit, Trash2, Clock, ChevronDown, ChevronUp } from 'lucide-react';
 import type { Category } from '@/types';
 
 export default function CategoriesPage() {
@@ -26,6 +26,7 @@ export default function CategoriesPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [expandedTasksId, setExpandedTasksId] = useState<string | null>(null);
 
   // Initialize default categories
   useEffect(() => {
@@ -223,6 +224,33 @@ export default function CategoriesPage() {
                         <p className="text-muted-foreground">Total</p>
                         <p className="font-medium">{formatDuration(stats?.total ?? 0)}</p>
                       </div>
+                    </div>
+
+                    {/* Tasks Section */}
+                    <div className="border-t border-border pt-3">
+                      <button
+                        onClick={() =>
+                          setExpandedTasksId(expandedTasksId === category.id ? null : category.id)
+                        }
+                        className="flex w-full items-center justify-between text-sm text-muted-foreground transition-colors hover:text-foreground"
+                      >
+                        <span>Tarefas</span>
+                        {expandedTasksId === category.id ? (
+                          <ChevronUp className="h-4 w-4" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4" />
+                        )}
+                      </button>
+
+                      {expandedTasksId === category.id && (
+                        <div className="mt-3">
+                          <TaskList
+                            categoryId={category.id}
+                            categoryColor={category.color}
+                            userId="user-1"
+                          />
+                        </div>
+                      )}
                     </div>
 
                     {/* Created date */}

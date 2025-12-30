@@ -5,6 +5,7 @@
 export interface TimeEntry {
   id: string;
   categoryId: string;
+  taskId?: string; // ID da tarefa associada (opcional)
   startTime: string; // ISO 8601 timestamp
   endTime: string | null; // null se timer ativo
   duration: number | null; // duração em segundos, null se timer ativo
@@ -16,6 +17,7 @@ export interface TimeEntry {
 
 export interface CreateTimeEntryInput {
   categoryId: string;
+  taskId?: string;
   notes?: string;
 }
 
