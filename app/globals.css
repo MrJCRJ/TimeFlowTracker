@@ -24,7 +24,7 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 221.2 83.2% 53.3%;
     --radius: 0.5rem;
-    --timer-bar-height: 100px;
+    --timer-bar-height: 60px;
   }
 
   .dark {
@@ -86,7 +86,7 @@
   .timer-bar {
     @apply fixed bottom-0 left-0 right-0 z-timer border-t border-border bg-card shadow-lg;
     @apply animate-slide-in-from-bottom;
-    min-height: 90px;
+    min-height: 56px;
   }
 
   .timer-bar-active {
@@ -140,7 +140,7 @@
 @layer utilities {
   /* Container para timer bar */
   .pb-timer {
-    padding-bottom: var(--timer-bar-height, 80px);
+    padding-bottom: var(--timer-bar-height, 60px);
   }
 
   /* Gradiente de texto */
