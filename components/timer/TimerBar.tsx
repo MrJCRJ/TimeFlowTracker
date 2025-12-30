@@ -311,7 +311,7 @@ export function TimerBar({
           />
           <div
             ref={pickerRef}
-            className="fixed bottom-16 left-2 right-2 z-50 overflow-hidden rounded-2xl border border-border bg-card shadow-2xl sm:bottom-20 sm:left-auto sm:right-4 sm:w-80"
+            className="fixed bottom-20 left-3 right-3 z-50 mb-2 max-h-[70vh] overflow-hidden rounded-2xl border border-border bg-card shadow-2xl sm:bottom-24 sm:left-auto sm:right-4 sm:w-80"
           >
             <div className="flex items-center justify-between border-b border-border bg-muted/30 px-4 py-3">
               <span className="font-medium">Selecionar Categoria</span>
@@ -322,7 +322,7 @@ export function TimerBar({
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <div className="grid grid-cols-2 gap-2 p-3">
+            <div className="grid max-h-[55vh] grid-cols-2 gap-2 overflow-y-auto p-3">
               {categories.map((category) => (
                 <button
                   key={category.id}
