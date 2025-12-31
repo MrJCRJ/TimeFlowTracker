@@ -4,7 +4,6 @@ import React from 'react';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
 import { TimerBarWrapper } from '@/components/timer/TimerBarWrapper';
-import { CategoryInitializer } from '@/components/providers/CategoryInitializer';
 import type { AuthUser } from '@/lib/auth';
 
 interface DashboardLayoutClientProps {
@@ -15,9 +14,6 @@ interface DashboardLayoutClientProps {
 export function DashboardLayoutClient({ user, children }: DashboardLayoutClientProps) {
   return (
     <div className="flex min-h-screen bg-background">
-      {/* Silent category initialization */}
-      <CategoryInitializer userId={user.id} />
-
       {/* Sidebar - Desktop only (hidden on mobile, menu is in Header) */}
       <Sidebar user={user} />
 

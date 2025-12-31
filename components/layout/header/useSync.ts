@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import { useNotificationStore } from '@/stores/notificationStore';
-import { useCategoryStore } from '@/stores/categoryStore';
 import { useTimerStore } from '@/stores/timerStore';
 import {
   getLocalUpdatedAt,
   setLocalUpdatedAt,
   compareSyncTimestamps,
 } from '@/lib/sync/simple-sync';
-import type { Category, TimeEntry } from '@/types';
+import type { TimeEntry } from '@/types';
 
 /**
  * Hook de sincronização simples baseado em timestamp
@@ -16,10 +15,11 @@ import type { Category, TimeEntry } from '@/types';
  * - Se timestamps iguais → Não faz nada
  * - Se Drive mais recente → Sobrescreve dados locais
  * - Se App mais recente → Atualiza dados no Drive
+ *
+ * Nota: Categorias são fixas, apenas timeEntries são sincronizados.
  */
 export function useSync() {
   const [isSyncing, setIsSyncing] = useState(false);
-  const { categories, setCategories } = useCategoryStore();
   const { timeEntries, setTimeEntries } = useTimerStore();
 
   const handleSync = async () => {
@@ -107,12 +107,10 @@ export function useSync() {
     const result = await response.json();
 
     if (result.success && result.data) {
-      const driveCategories = (result.data.categories || []) as Category[];
       const driveTimeEntries = (result.data.timeEntries || []) as TimeEntry[];
       const driveUpdatedAt = result.data.updatedAt;
 
-      // Sobrescrever dados locais
-      setCategories(driveCategories);
+      // Sobrescrever dados locais (apenas timeEntries, categorias são fixas)
       setTimeEntries(driveTimeEntries);
 
       // Atualizar timestamp local
@@ -123,7 +121,7 @@ export function useSync() {
       useNotificationStore.getState().addNotification({
         type: 'success',
         title: 'Sincronizado',
-        message: `Dados baixados do Drive: ${driveCategories.length} categorias, ${driveTimeEntries.length} registros.`,
+        message: `Dados baixados do Drive: ${driveTimeEntries.length} registros de tempo.`,
       });
     }
   };
@@ -136,14 +134,13 @@ export function useSync() {
 
     const now = new Date().toISOString();
 
-    // 1. Enviar dados para o Drive
+    // 1. Enviar dados para o Drive (apenas timeEntries, categorias são fixas)
     const response = await fetch('/api/drive/sync/upload', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        categories,
         timeEntries,
         updatedAt: now,
       }),
@@ -171,7 +168,7 @@ export function useSync() {
     useNotificationStore.getState().addNotification({
       type: 'success',
       title: 'Sincronizado',
-      message: `Dados enviados para o Drive: ${categories.length} categorias, ${timeEntries.length} registros.`,
+      message: `Dados enviados para o Drive: ${timeEntries.length} registros de tempo.`,
     });
   };
 

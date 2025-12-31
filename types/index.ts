@@ -8,6 +8,7 @@ export * from './timer';
 export * from './user';
 export * from './api';
 export * from './task';
+export * from './entries';
 
 // Tipos utilitários
 export type Nullable<T> = T | null;

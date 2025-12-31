@@ -13,6 +13,15 @@ export interface TimeEntry {
   notes: string | null;
   createdAt: string;
   updatedAt: string;
+  // Metadados específicos por tipo de categoria
+  metadata?: {
+    jobId?: string; // Para categoria Trabalho
+    recipeId?: string; // Para categoria Alimentação
+    commitmentId?: string; // Para categoria Compromissos
+    exercises?: Array<{ name: string; sets: number; reps: number; weight?: number }>; // Para Treino
+    checklistItems?: Array<{ id: string; text: string; completed: boolean }>; // Para tipos simples
+    [key: string]: unknown;
+  };
 }
 
 export interface CreateTimeEntryInput {

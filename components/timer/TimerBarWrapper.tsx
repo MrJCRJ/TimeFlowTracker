@@ -13,9 +13,11 @@ interface TimerBarWrapperProps {
  * Este componente utiliza o TimerBar que funciona 100% localmente.
  * Os dados são salvos no localStorage e podem ser sincronizados
  * manualmente com o Google Drive através da página de configurações.
+ *
+ * Categorias são fixas, então não há estado de loading.
  */
 export function TimerBarWrapper({ userId }: TimerBarWrapperProps) {
-  const { categories, isLoading } = useCategoryStore();
+  const { categories } = useCategoryStore();
 
-  return <TimerBar userId={userId} isLoading={isLoading && categories.length === 0} />;
+  return <TimerBar userId={userId} isLoading={categories.length === 0} />;
 }

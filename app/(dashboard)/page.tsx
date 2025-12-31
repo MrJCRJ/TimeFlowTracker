@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { useCategoryStore } from '@/stores/categoryStore';
 import { useTimerStore } from '@/stores/timerStore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,14 +10,8 @@ import { Clock, Target, TrendingUp, Zap } from 'lucide-react';
 import type { CategoryTimeBreakdown } from '@/types';
 
 export default function DashboardPage() {
-  const { categories, initializeDefaults } = useCategoryStore();
+  const { categories } = useCategoryStore();
   const { timeEntries, isRunning, elapsedSeconds, activeEntry } = useTimerStore();
-
-  // Initialize default categories on first load
-  useEffect(() => {
-    // This would normally use the user ID from session
-    initializeDefaults('user-1');
-  }, [initializeDefaults]);
 
   // Calculate today's stats
   const todayStats = useMemo(() => {

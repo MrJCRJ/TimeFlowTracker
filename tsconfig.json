@@ -73,6 +73,7 @@
     ".next",
     "out",
     "public",
-    "cypress"
+    "cypress",
+    "__tests__"
   ]
 }

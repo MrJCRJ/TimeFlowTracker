@@ -5,8 +5,20 @@ import { cn, formatTime } from '@/lib/utils';
 import { useTimerStore } from '@/stores/timerStore';
 import { useCategoryStore } from '@/stores/categoryStore';
 import { useTaskStore } from '@/stores/taskStore';
+import { useJobStore } from '@/stores/jobStore';
+import { useRecipeStore } from '@/stores/recipeStore';
+import { useCommitmentStore } from '@/stores/commitmentStore';
 import { TIMER_UPDATE_INTERVAL } from '@/lib/constants';
 import type { Category, TimeEntry } from '@/types';
+import type { ChecklistItem } from '@/types/entries/simple';
+import type { WorkoutExercise } from '@/types/entries/workout';
+import type { Recipe } from '@/types/entries/meal';
+import type { Commitment } from '@/types/entries/commitment';
+import { SimpleEntryPanel } from '@/components/entries/SimpleEntryPanel';
+import { WorkoutEntryPanel } from '@/components/entries/WorkoutEntryPanel';
+import { WorkEntryPanel } from '@/components/entries/WorkEntryPanel';
+import { MealEntryPanel } from '@/components/entries/MealEntryPanel';
+import { CommitmentEntryPanel } from '@/components/entries/CommitmentEntryPanel';
 import {
   Play,
   Square,
@@ -34,6 +46,7 @@ import {
   Presentation,
   FileText,
   Sparkles,
+  Calendar,
   X,
   Plus,
   Check,
@@ -68,6 +81,7 @@ const iconMap: Record<string, LucideIcon> = {
   presentation: Presentation,
   'file-text': FileText,
   sparkles: Sparkles,
+  calendar: Calendar,
 };
 
 interface TimerStoreState {
@@ -97,6 +111,9 @@ export function TimerBar({
   const timerStoreFromHook = useTimerStore();
   const { categories: storeCategories } = useCategoryStore();
   const { getTasksByCategory, addTask, updateTask } = useTaskStore();
+  const { selectedJobId, selectJob } = useJobStore();
+  const { selectedRecipeId, selectRecipe, incrementTimesEaten } = useRecipeStore();
+  const { selectedCommitmentId, selectCommitment } = useCommitmentStore();
 
   const timerStore = store || timerStoreFromHook;
   const categories = propCategories || storeCategories;
@@ -107,6 +124,10 @@ export function TimerBar({
   // Estados
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [showTaskPanel, setShowTaskPanel] = useState(false);
+  const [showEntryPanel, setShowEntryPanel] = useState(false);
+  const [checklistItems, setChecklistItems] = useState<ChecklistItem[]>([]);
+  const [workoutExercises, setWorkoutExercises] = useState<WorkoutExercise[]>([]);
+  const [mealAction, setMealAction] = useState<'cooking' | 'eating' | null>(null);
   const [newTaskName, setNewTaskName] = useState('');
   const [isAddingTask, setIsAddingTask] = useState(false);
   const pickerRef = useRef<HTMLDivElement>(null);
@@ -161,9 +182,17 @@ export function TimerBar({
   );
 
   const handleStopTimer = useCallback(() => {
+    // TODO: Salvar dados da entrada junto quando implementar persistência
     stopTimer();
     setShowTaskPanel(false);
-  }, [stopTimer]);
+    setShowEntryPanel(false);
+    setChecklistItems([]); // Reset checklist
+    setWorkoutExercises([]); // Reset exercícios
+    setMealAction(null); // Reset meal action
+    selectJob(null); // Reset trabalho selecionado
+    selectRecipe(null); // Reset receita selecionada
+    selectCommitment(null); // Reset compromisso selecionado
+  }, [stopTimer, selectJob, selectRecipe, selectCommitment]);
 
   const handleToggleTask = useCallback(
     (taskId: string, isCompleted: boolean) => {
@@ -180,6 +209,87 @@ export function TimerBar({
     setNewTaskName('');
     setIsAddingTask(false);
   }, [activeCategory, newTaskName, addTask, userId]);
+
+  // Handler para iniciar timer de receita (FAZER)
+  const handleStartCooking = useCallback(
+    (recipe: Recipe) => {
+      selectRecipe(recipe.id);
+      setMealAction('cooking');
+      startTimer('food', userId);
+      setShowCategoryPicker(false);
+      setShowEntryPanel(true);
+    },
+    [selectRecipe, startTimer, userId]
+  );
+
+  // Handler para registrar consumo de receita (COMER)
+  const handleEatRecipe = useCallback(
+    (recipe: Recipe, portions: number) => {
+      incrementTimesEaten(recipe.id, portions);
+      // Registrar como entrada rápida (sem timer)
+      // TODO: Implementar registro de EatingEntry no store
+      setMealAction(null);
+      selectRecipe(null);
+      setShowEntryPanel(false);
+    },
+    [incrementTimesEaten, selectRecipe]
+  );
+
+  // Handler para iniciar timer de compromisso
+  const handleStartCommitmentTimer = useCallback(
+    (commitment: Commitment) => {
+      selectCommitment(commitment.id);
+      startTimer('commitments', userId);
+      setShowCategoryPicker(false);
+      setShowEntryPanel(true);
+    },
+    [selectCommitment, startTimer, userId]
+  );
+
+  // Helper para obter label de subtítulo baseado no tipo
+  const getSubtitleForCategory = useCallback(() => {
+    if (!activeCategory) return '';
+
+    switch (activeCategory.type) {
+      case 'simple':
+        return checklistItems.length > 0
+          ? `${checklistItems.filter((i) => i.completed).length}/${checklistItems.length} itens`
+          : 'Adicionar atividades';
+      case 'workout':
+        const totalSets = workoutExercises.reduce((acc, ex) => acc + ex.sets.length, 0);
+        const completedSets = workoutExercises.reduce(
+          (acc, ex) => acc + ex.sets.filter((s) => s.completed).length,
+          0
+        );
+        return totalSets > 0 ? `${completedSets}/${totalSets} séries` : 'Adicionar exercícios';
+      case 'work':
+        const job = selectedJobId ? useJobStore.getState().getJobById(selectedJobId) : null;
+        return job ? job.name : 'Selecionar trabalho';
+      case 'meal':
+        const recipe = selectedRecipeId
+          ? useRecipeStore.getState().getRecipeById(selectedRecipeId)
+          : null;
+        return recipe ? `Preparando: ${recipe.name}` : 'Selecionar receita';
+      case 'commitment':
+        const commitment = selectedCommitmentId
+          ? useCommitmentStore.getState().getCommitmentById(selectedCommitmentId)
+          : null;
+        return commitment ? commitment.title : 'Selecionar compromisso';
+      case 'task':
+      default:
+        return pendingTasks.length > 0
+          ? `${pendingTasks.length} tarefa${pendingTasks.length > 1 ? 's' : ''} pendente${pendingTasks.length > 1 ? 's' : ''}`
+          : 'Sem tarefas';
+    }
+  }, [
+    activeCategory,
+    checklistItems,
+    workoutExercises,
+    selectedJobId,
+    selectedRecipeId,
+    selectedCommitmentId,
+    pendingTasks,
+  ]);
 
   // Renderiza ícone
   const renderIcon = (iconName: string, color: string, size = 'h-4 w-4') => {
@@ -213,6 +323,198 @@ export function TimerBar({
 
   return (
     <>
+      {/* Painel de Entrada Simples (Sono, Lazer, Casa) */}
+      {isRunning && activeCategory && activeCategory.type === 'simple' && showEntryPanel && (
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/30"
+            onClick={() => setShowEntryPanel(false)}
+          />
+          <div className="fixed bottom-16 left-2 right-2 z-50 max-h-[60vh] overflow-hidden rounded-2xl border border-border bg-card shadow-2xl sm:bottom-20 sm:left-auto sm:right-4 sm:w-80">
+            {/* Header */}
+            <div
+              className="flex items-center justify-between border-b border-border px-4 py-3"
+              style={{ backgroundColor: `${activeCategory.color}15` }}
+            >
+              <div className="flex items-center gap-2">
+                {renderIcon(activeCategory.icon, activeCategory.color)}
+                <span className="font-medium">{activeCategory.name}</span>
+              </div>
+              <button
+                onClick={() => setShowEntryPanel(false)}
+                className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Conteúdo do painel simples */}
+            <div className="p-3">
+              <SimpleEntryPanel
+                categoryName={activeCategory.name}
+                categoryColor={activeCategory.color}
+                items={checklistItems}
+                onItemsChange={setChecklistItems}
+                isExpanded={true}
+                onToggleExpand={() => {}}
+                className="border-0 bg-transparent"
+              />
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Painel de Treino (workout) */}
+      {isRunning && activeCategory && activeCategory.type === 'workout' && showEntryPanel && (
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/30"
+            onClick={() => setShowEntryPanel(false)}
+          />
+          <div className="fixed bottom-16 left-2 right-2 z-50 max-h-[70vh] overflow-hidden rounded-2xl border border-border bg-card shadow-2xl sm:bottom-20 sm:left-auto sm:right-4 sm:w-96">
+            <div
+              className="flex items-center justify-between border-b border-border px-4 py-3"
+              style={{ backgroundColor: `${activeCategory.color}15` }}
+            >
+              <div className="flex items-center gap-2">
+                {renderIcon(activeCategory.icon, activeCategory.color)}
+                <span className="font-medium">{activeCategory.name}</span>
+              </div>
+              <button
+                onClick={() => setShowEntryPanel(false)}
+                className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="max-h-[55vh] overflow-y-auto p-3">
+              <WorkoutEntryPanel
+                categoryColor={activeCategory.color}
+                exercises={workoutExercises}
+                onExercisesChange={setWorkoutExercises}
+                isExpanded={true}
+                onToggleExpand={() => {}}
+                className="border-0 bg-transparent"
+              />
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Painel de Trabalho (work) */}
+      {isRunning && activeCategory && activeCategory.type === 'work' && showEntryPanel && (
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/30"
+            onClick={() => setShowEntryPanel(false)}
+          />
+          <div className="fixed bottom-16 left-2 right-2 z-50 max-h-[60vh] overflow-hidden rounded-2xl border border-border bg-card shadow-2xl sm:bottom-20 sm:left-auto sm:right-4 sm:w-80">
+            <div
+              className="flex items-center justify-between border-b border-border px-4 py-3"
+              style={{ backgroundColor: `${activeCategory.color}15` }}
+            >
+              <div className="flex items-center gap-2">
+                {renderIcon(activeCategory.icon, activeCategory.color)}
+                <span className="font-medium">{activeCategory.name}</span>
+              </div>
+              <button
+                onClick={() => setShowEntryPanel(false)}
+                className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="max-h-[50vh] overflow-y-auto p-3">
+              <WorkEntryPanel
+                categoryColor={activeCategory.color}
+                selectedJobId={selectedJobId}
+                onJobSelect={selectJob}
+                isExpanded={true}
+                onToggleExpand={() => {}}
+                className="border-0 bg-transparent"
+              />
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Painel de Alimentação (meal) */}
+      {isRunning && activeCategory && activeCategory.type === 'meal' && showEntryPanel && (
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/30"
+            onClick={() => setShowEntryPanel(false)}
+          />
+          <div className="fixed bottom-16 left-2 right-2 z-50 max-h-[70vh] overflow-hidden rounded-2xl border border-border bg-card shadow-2xl sm:bottom-20 sm:left-auto sm:right-4 sm:w-80">
+            <div
+              className="flex items-center justify-between border-b border-border px-4 py-3"
+              style={{ backgroundColor: `${activeCategory.color}15` }}
+            >
+              <div className="flex items-center gap-2">
+                {renderIcon(activeCategory.icon, activeCategory.color)}
+                <span className="font-medium">{activeCategory.name}</span>
+              </div>
+              <button
+                onClick={() => setShowEntryPanel(false)}
+                className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="max-h-[55vh] overflow-y-auto p-3">
+              <MealEntryPanel
+                categoryColor={activeCategory.color}
+                selectedRecipeId={selectedRecipeId}
+                selectedAction={mealAction}
+                onRecipeSelect={selectRecipe}
+                onActionSelect={setMealAction}
+                onStartCooking={handleStartCooking}
+                onEat={handleEatRecipe}
+                isExpanded={true}
+                onToggleExpand={() => {}}
+                className="border-0 bg-transparent"
+              />
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Painel de Compromissos (commitment) */}
+      {isRunning && activeCategory && activeCategory.type === 'commitment' && showEntryPanel && (
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/30"
+            onClick={() => setShowEntryPanel(false)}
+          />
+          <div className="fixed bottom-16 left-2 right-2 z-50 max-h-[70vh] overflow-hidden rounded-2xl border border-border bg-card shadow-2xl sm:bottom-20 sm:left-auto sm:right-4 sm:w-96">
+            <div
+              className="flex items-center justify-between border-b border-border px-4 py-3"
+              style={{ backgroundColor: `${activeCategory.color}15` }}
+            >
+              <div className="flex items-center gap-2">
+                {renderIcon(activeCategory.icon, activeCategory.color)}
+                <span className="font-medium">{activeCategory.name}</span>
+              </div>
+              <button
+                onClick={() => setShowEntryPanel(false)}
+                className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="max-h-[55vh] overflow-y-auto p-3">
+              <CommitmentEntryPanel
+                categoryColor={activeCategory.color}
+                onStartTimer={handleStartCommitmentTimer}
+                isExpanded={true}
+                onToggleExpand={() => {}}
+                className="border-0 bg-transparent"
+              />
+            </div>
+          </div>
+        </>
+      )}
+
       {/* Painel de Tarefas (quando timer ativo) */}
       {isRunning && activeCategory && showTaskPanel && (
         <>
@@ -389,7 +691,17 @@ export function TimerBar({
               {isRunning && activeCategory ? (
                 /* Timer ativo */
                 <button
-                  onClick={() => setShowTaskPanel(!showTaskPanel)}
+                  onClick={() => {
+                    // Para tipo 'task' usa o painel de tarefas legado
+                    if (activeCategory.type === 'task') {
+                      setShowTaskPanel(!showTaskPanel);
+                      setShowEntryPanel(false);
+                    } else {
+                      // Para outros tipos usa o painel especializado
+                      setShowEntryPanel(!showEntryPanel);
+                      setShowTaskPanel(false);
+                    }
+                  }}
                   className="flex items-center gap-2 rounded-xl px-3 py-1.5 transition-all hover:bg-white/10"
                 >
                   <div
@@ -400,18 +712,13 @@ export function TimerBar({
                   </div>
                   <div className="min-w-0 text-left">
                     <p className="truncate text-sm font-medium">{activeCategory.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {pendingTasks.length > 0
-                        ? `${pendingTasks.length} tarefa${pendingTasks.length > 1 ? 's' : ''} pendente${pendingTasks.length > 1 ? 's' : ''}`
-                        : 'Sem tarefas'}
-                    </p>
+                    <p className="text-xs text-muted-foreground">{getSubtitleForCategory()}</p>
                   </div>
-                  {activeTasks.length > 0 &&
-                    (showTaskPanel ? (
-                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                    ) : (
-                      <ChevronUp className="h-4 w-4 text-muted-foreground" />
-                    ))}
+                  {showTaskPanel || showEntryPanel ? (
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                  )}
                 </button>
               ) : (
                 /* Timer parado */

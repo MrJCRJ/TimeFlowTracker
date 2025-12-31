@@ -9,16 +9,20 @@ import {
   ManualSyncSection,
   DangerZoneSection,
 } from '@/components/settings';
-import { useCategoryStore } from '@/stores/categoryStore';
 import { useTimerStore } from '@/stores/timerStore';
 import { useNotificationStore } from '@/stores/notificationStore';
 import { useTheme } from '@/stores/themeStore';
+import { useJobStore } from '@/stores/jobStore';
+import { useRecipeStore } from '@/stores/recipeStore';
+import { useCommitmentStore } from '@/stores/commitmentStore';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 export default function SettingsPage() {
   const { data: session } = useSession();
-  const { reset: resetCategories } = useCategoryStore();
   const { reset: resetTimer } = useTimerStore();
+  const { reset: resetJobs } = useJobStore();
+  const { reset: resetRecipes } = useRecipeStore();
+  const { reset: resetCommitments } = useCommitmentStore();
   const { addNotification } = useNotificationStore();
   const { theme, setTheme, isDark } = useTheme();
   const {
@@ -36,9 +40,11 @@ export default function SettingsPage() {
     if (confirm('Tem certeza que deseja limpar todos os dados? Esta ação não pode ser desfeita.')) {
       setIsClearing(true);
       try {
-        // 1. Resetar stores
-        resetCategories();
+        // 1. Resetar todas as stores
         resetTimer();
+        resetJobs();
+        resetRecipes();
+        resetCommitments();
 
         // 2. Limpar TODAS as chaves do localStorage relacionadas ao app
         const keysToRemove = [
@@ -49,6 +55,9 @@ export default function SettingsPage() {
           'timeflow_preferences',
           'timeflow_sync_metadata',
           'timeflow_theme',
+          'timeflow_jobs',
+          'timeflow_recipes',
+          'timeflow_commitments',
           'category-storage',
           'timer_state',
           'categories_state',

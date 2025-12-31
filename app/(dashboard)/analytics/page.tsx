@@ -7,6 +7,10 @@ import { TimeChart } from '@/components/analytics/TimeChart';
 import { PeriodSelector, TimePeriod } from '@/components/analytics/PeriodSelector';
 import { AnalyticsSummaryCards } from '@/components/analytics/AnalyticsSummaryCards';
 import { CategoryBreakdownList } from '@/components/analytics/CategoryBreakdownList';
+import { WorkAnalytics } from '@/components/analytics/WorkAnalytics';
+import { MealAnalytics } from '@/components/analytics/MealAnalytics';
+import { CommitmentAnalytics } from '@/components/analytics/CommitmentAnalytics';
+import { WorkoutAnalytics } from '@/components/analytics/WorkoutAnalytics';
 import { Card, CardContent } from '@/components/ui/card';
 import { isToday, isThisWeek, isThisMonth } from '@/lib/utils';
 import { Clock } from 'lucide-react';
@@ -211,6 +215,25 @@ export default function AnalyticsPage() {
 
       {/* Detailed Category List */}
       <CategoryBreakdownList breakdown={categoryBreakdown} />
+
+      {/* Specialized Analytics */}
+      <div className="space-y-4 sm:space-y-6">
+        <h2 className="text-lg font-semibold sm:text-xl">Análises Detalhadas</h2>
+
+        <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
+          {/* Trabalho */}
+          <WorkAnalytics filteredEntries={filteredEntries} periodLabel={periodLabel} />
+
+          {/* Treino */}
+          <WorkoutAnalytics filteredEntries={filteredEntries} periodLabel={periodLabel} />
+
+          {/* Alimentação */}
+          <MealAnalytics periodLabel={periodLabel} />
+
+          {/* Compromissos */}
+          <CommitmentAnalytics periodLabel={periodLabel} />
+        </div>
+      </div>
     </div>
   );
 }

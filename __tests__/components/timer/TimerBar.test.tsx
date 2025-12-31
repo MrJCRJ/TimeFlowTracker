@@ -14,26 +14,15 @@ import userEvent from '@testing-library/user-event';
 import { TimerBar } from '@/components/timer/TimerBar';
 import type { Category } from '@/types';
 
-// Mock do useCategoryStore
+// Mock do useCategoryStore - agora usa categorias fixas
 jest.mock('@/stores/categoryStore', () => ({
   useCategoryStore: () => ({
     categories: [],
-    initializeDefaults: jest.fn(),
     getCategoryById: jest.fn((id: string) => {
-      const categories: Record<string, Category> = {
-        'cat-1': {
-          id: 'cat-1',
-          name: 'Trabalho',
-          color: '#3b82f6',
-          icon: 'briefcase',
-          isDefault: true,
-          userId: 'user-1',
-          createdAt: '2024-01-01T00:00:00.000Z',
-          updatedAt: '2024-01-01T00:00:00.000Z',
-        },
-      };
-      return categories[id];
+      const { FIXED_CATEGORIES } = require('@/types/category');
+      return FIXED_CATEGORIES.find((c: Category) => c.id === id);
     }),
+    getCategoriesByType: jest.fn(),
   }),
 }));
 
@@ -63,7 +52,7 @@ const activeStore = {
   isRunning: true,
   activeEntry: {
     id: 'entry-1',
-    categoryId: 'cat-1',
+    categoryId: 'work', // Usando ID fixo
     startTime: new Date().toISOString(),
     endTime: null,
     duration: null,
@@ -78,27 +67,23 @@ const activeStore = {
   updateElapsed: jest.fn(),
 };
 
-// Mock das categorias
+// Mock das categorias - usando categorias fixas para teste
 const mockCategories: Category[] = [
   {
-    id: 'cat-1',
+    id: 'work',
     name: 'Trabalho',
     color: '#3b82f6',
     icon: 'briefcase',
-    isDefault: true,
-    userId: 'user-1',
-    createdAt: '2024-01-01T00:00:00.000Z',
-    updatedAt: '2024-01-01T00:00:00.000Z',
+    type: 'work',
+    description: 'Gerencie múltiplos trabalhos e acompanhe ganhos',
   },
   {
-    id: 'cat-2',
+    id: 'study',
     name: 'Estudo',
     color: '#8b5cf6',
     icon: 'book',
-    isDefault: true,
-    userId: 'user-1',
-    createdAt: '2024-01-01T00:00:00.000Z',
-    updatedAt: '2024-01-01T00:00:00.000Z',
+    type: 'task',
+    description: 'Acompanhe seu tempo de estudo e tarefas concluídas',
   },
 ];
 
@@ -186,7 +171,7 @@ describe('TimerBar', () => {
       const trabalhoButton = screen.getByText('Trabalho');
       await user.click(trabalhoButton);
 
-      expect(mockStore.startTimer).toHaveBeenCalledWith('cat-1', 'user-1');
+      expect(mockStore.startTimer).toHaveBeenCalledWith('work', 'user-1');
     });
   });
 
@@ -197,7 +182,7 @@ describe('TimerBar', () => {
         isRunning: true,
         activeEntry: {
           id: 'entry-1',
-          categoryId: 'cat-1',
+          categoryId: 'work', // Usando ID fixo
           startTime: new Date().toISOString(),
           endTime: null,
           duration: null,
@@ -243,7 +228,7 @@ describe('TimerBar', () => {
       const useTimerStoreMock = require('@/stores/timerStore').useTimerStore;
       useTimerStoreMock.mockReturnValue({
         isRunning: true,
-        activeEntry: { categoryId: 'cat-1' },
+        activeEntry: { categoryId: 'work' },
         elapsedSeconds: 65, // 1:05
         startTimer: mockStartTimer,
         stopTimer: mockStopTimer,
@@ -259,7 +244,7 @@ describe('TimerBar', () => {
       const useTimerStoreMock = require('@/stores/timerStore').useTimerStore;
       useTimerStoreMock.mockReturnValue({
         isRunning: true,
-        activeEntry: { categoryId: 'cat-1' },
+        activeEntry: { categoryId: 'work' },
         elapsedSeconds: 3665, // 1:01:05
         startTimer: mockStartTimer,
         stopTimer: mockStopTimer,
@@ -277,7 +262,7 @@ describe('TimerBar', () => {
       const useTimerStoreMock = require('@/stores/timerStore').useTimerStore;
       useTimerStoreMock.mockReturnValue({
         isRunning: true,
-        activeEntry: { categoryId: 'cat-1' },
+        activeEntry: { categoryId: 'work' },
         elapsedSeconds: 0,
         startTimer: mockStartTimer,
         stopTimer: mockStopTimer,

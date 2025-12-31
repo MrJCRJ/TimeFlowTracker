@@ -3,13 +3,14 @@
 import { useCallback, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useTimerStore } from '@/stores/timerStore';
-import { useCategoryStore } from '@/stores/categoryStore';
 import { useNotificationStore } from '@/stores/notificationStore';
-import type { Category, TimeEntry } from '@/types';
+import type { TimeEntry } from '@/types';
 
 /**
  * Hook para sincronização MANUAL com Google Drive
  * Permite fazer backup e restaurar dados manualmente
+ *
+ * Nota: Categorias são fixas, apenas timeEntries são sincronizados.
  */
 export function useManualSync() {
   const { data: session } = useSession();
@@ -22,8 +23,6 @@ export function useManualSync() {
   // Stores
   const timeEntries = useTimerStore((s) => s.timeEntries);
   const setTimeEntries = useTimerStore((s) => s.setTimeEntries);
-  const categories = useCategoryStore((s) => s.categories);
-  const setCategories = useCategoryStore((s) => s.setCategories);
 
   /**
    * Faz backup manual dos dados locais para o Drive
@@ -47,7 +46,6 @@ export function useManualSync() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          categories,
           timeEntries,
           updatedAt: new Date().toISOString(),
         }),
@@ -73,7 +71,7 @@ export function useManualSync() {
     } finally {
       setIsBackingUp(false);
     }
-  }, [session?.accessToken, categories, timeEntries, addNotification]);
+  }, [session?.accessToken, timeEntries, addNotification]);
 
   /**
    * Restaura dados do Drive (sobrescreve dados locais)
@@ -90,7 +88,7 @@ export function useManualSync() {
 
     // Confirmação antes de sobrescrever
     const confirmRestore = window.confirm(
-      'ATENÇÃO: Isso irá sobrescrever todos os seus dados locais com os dados do Google Drive. Deseja continuar?'
+      'ATENÇÃO: Isso irá sobrescrever todos os seus registros de tempo locais com os dados do Google Drive. Deseja continuar?'
     );
 
     if (!confirmRestore) {
@@ -109,10 +107,7 @@ export function useManualSync() {
       const result = await response.json();
 
       if (result.success && result.data) {
-        // Atualizar stores com dados do Drive
-        if (result.data.categories && result.data.categories.length > 0) {
-          setCategories(result.data.categories as Category[]);
-        }
+        // Atualizar store com dados do Drive (apenas timeEntries, categorias são fixas)
         if (result.data.timeEntries && result.data.timeEntries.length > 0) {
           setTimeEntries(result.data.timeEntries as TimeEntry[]);
         }
@@ -141,7 +136,7 @@ export function useManualSync() {
     } finally {
       setIsRestoring(false);
     }
-  }, [session?.accessToken, setCategories, setTimeEntries, addNotification]);
+  }, [session?.accessToken, setTimeEntries, addNotification]);
 
   return {
     backupToDrive,
