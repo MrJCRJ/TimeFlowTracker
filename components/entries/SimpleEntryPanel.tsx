@@ -89,6 +89,7 @@ export function SimpleEntryPanel({
             items={items}
             onItemsChange={onItemsChange}
             placeholder={getPlaceholder(categoryName)}
+            autocompleteType="activity"
             compact
           />
         </div>

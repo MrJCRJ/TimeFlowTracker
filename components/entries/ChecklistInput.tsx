@@ -14,6 +14,7 @@ interface ChecklistInputProps {
   maxItems?: number;
   className?: string;
   compact?: boolean;
+  autocompleteType?: 'task' | 'activity'; // Tipo de autocomplete a usar
 }
 
 export function ChecklistInput({
@@ -23,12 +24,22 @@ export function ChecklistInput({
   maxItems = 20,
   className,
   compact = false,
+  autocompleteType = 'task',
 }: ChecklistInputProps) {
   const [newItemText, setNewItemText] = useState('');
   const [isAdding, setIsAdding] = useState(false);
 
   // Autocomplete store
-  const { getTaskSuggestions, addTaskName } = useAutocompleteStore();
+  const {
+    getTaskSuggestions,
+    addTaskName,
+    getActivitySuggestions,
+    addActivityName,
+  } = useAutocompleteStore();
+
+  // Selecionar funções baseado no tipo
+  const getSuggestions = autocompleteType === 'activity' ? getActivitySuggestions : getTaskSuggestions;
+  const addToHistory = autocompleteType === 'activity' ? addActivityName : addTaskName;
 
   const generateId = () => `item_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 
@@ -45,11 +56,11 @@ export function ChecklistInput({
     onItemsChange([...items, newItem]);
 
     // Salvar no histórico para autocomplete
-    addTaskName(text);
+    addToHistory(text);
 
     setNewItemText('');
     setIsAdding(false);
-  }, [newItemText, items, maxItems, onItemsChange, addTaskName]);
+  }, [newItemText, items, maxItems, onItemsChange, addToHistory]);
 
   const handleToggleItem = useCallback(
     (itemId: string) => {
@@ -170,7 +181,7 @@ export function ChecklistInput({
             value={newItemText}
             onChange={setNewItemText}
             onSubmit={handleAddItem}
-            suggestions={getTaskSuggestions(newItemText)}
+            suggestions={getSuggestions(newItemText)}
             placeholder={placeholder}
             className="flex-1"
             inputClassName={cn('py-1.5', compact && 'py-1')}

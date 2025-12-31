@@ -23,6 +23,7 @@ interface SyncData {
   autocomplete: {
     exerciseNames: string[];
     taskNames: string[];
+    activityNames: string[];
   };
 }
 
@@ -69,6 +70,7 @@ export function useManualSync() {
   // Autocomplete Store
   const exerciseNames = useAutocompleteStore((s) => s.exerciseNames);
   const taskNames = useAutocompleteStore((s) => s.taskNames);
+  const activityNames = useAutocompleteStore((s) => s.activityNames);
   const setAutocomplete = useAutocompleteStore((s) => s.setAutocomplete);
 
   /**
@@ -84,9 +86,10 @@ export function useManualSync() {
       autocomplete: {
         exerciseNames,
         taskNames,
+        activityNames,
       },
     };
-  }, [timeEntries, jobs, recipes, commitments, tasks, exerciseNames, taskNames]);
+  }, [timeEntries, jobs, recipes, commitments, tasks, exerciseNames, taskNames, activityNames]);
 
   /**
    * Faz backup manual dos dados locais para o Drive
