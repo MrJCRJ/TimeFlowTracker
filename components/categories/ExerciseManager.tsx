@@ -13,10 +13,7 @@ import {
   List,
   Check,
 } from 'lucide-react';
-import {
-  useExerciseTemplateStore,
-  type ExerciseTemplate,
-} from '@/stores/exerciseTemplateStore';
+import { useExerciseTemplateStore, type ExerciseTemplate } from '@/stores/exerciseTemplateStore';
 import { MUSCLE_GROUP_LABELS, type MuscleGroup } from '@/types/entries/workout';
 
 interface ExerciseManagerProps {
@@ -455,10 +452,7 @@ export function ExerciseManager({ className }: ExerciseManagerProps) {
                 const isSelectingExercises = selectingExercisesForRoutine === routine.id;
 
                 return (
-                  <div
-                    key={routine.id}
-                    className="overflow-hidden rounded-lg border border-border"
-                  >
+                  <div key={routine.id} className="overflow-hidden rounded-lg border border-border">
                     {/* Header da rotina */}
                     <button
                       type="button"

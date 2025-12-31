@@ -348,7 +348,9 @@ export function WorkEntryPanel({
                         <TrendingUp className="h-3 w-3" />
                         Valor/hora
                       </p>
-                      <p className="text-sm font-semibold">{formatCurrency(selectedJobHourlyRate)}/h</p>
+                      <p className="text-sm font-semibold">
+                        {formatCurrency(selectedJobHourlyRate)}/h
+                      </p>
                       <p className="text-xs text-muted-foreground">
                         ({formatHours(totalSecondsWorked)}h trabalhadas)
                       </p>
@@ -463,7 +465,10 @@ export function WorkEntryPanel({
                         setNewEarningAmount('');
                         setNewEarningDescription('');
                       }}
-                      className={cn('rounded-md px-3 py-2 text-sm', 'transition-colors hover:bg-muted')}
+                      className={cn(
+                        'rounded-md px-3 py-2 text-sm',
+                        'transition-colors hover:bg-muted'
+                      )}
                     >
                       Cancelar
                     </button>

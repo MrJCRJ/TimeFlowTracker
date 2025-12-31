@@ -1,6 +1,12 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import type { Job, CreateJobInput, UpdateJobInput, Earning, AddEarningInput } from '@/types/entries/work';
+import type {
+  Job,
+  CreateJobInput,
+  UpdateJobInput,
+  Earning,
+  AddEarningInput,
+} from '@/types/entries/work';
 
 const generateId = () => `job_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 const generateEarningId = () => `earn_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
@@ -195,7 +201,7 @@ export const useJobStore = create<JobStore>()(
        */
       calculateHourlyRate: (jobId: string, totalSeconds: number, month?: string) => {
         const totalEarnings = get().getTotalEarnings(jobId, month);
-        
+
         if (totalEarnings === 0 || totalSeconds === 0) {
           return null;
         }
