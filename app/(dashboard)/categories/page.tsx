@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import { useCategoryStore } from '@/stores/categoryStore';
 import { TaskList } from '@/components/categories';
-import { ExerciseManager } from '@/components/categories/ExerciseManager';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTimerStore } from '@/stores/timerStore';
 import { formatDuration, isThisWeek, isToday } from '@/lib/utils';
@@ -187,31 +186,6 @@ export default function CategoriesPage() {
                             categoryColor={category.color}
                             userId="user-1"
                           />
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Exercise Section - Para categoria Treino */}
-                  {category.type === 'workout' && (
-                    <div className="border-t border-border pt-3">
-                      <button
-                        onClick={() =>
-                          setExpandedTasksId(expandedTasksId === category.id ? null : category.id)
-                        }
-                        className="flex w-full items-center justify-between text-sm text-muted-foreground transition-colors hover:text-foreground"
-                      >
-                        <span>Exercícios e Rotinas</span>
-                        {expandedTasksId === category.id ? (
-                          <ChevronUp className="h-4 w-4" />
-                        ) : (
-                          <ChevronDown className="h-4 w-4" />
-                        )}
-                      </button>
-
-                      {expandedTasksId === category.id && (
-                        <div className="mt-3">
-                          <ExerciseManager categoryColor={category.color} />
                         </div>
                       )}
                     </div>
