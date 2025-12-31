@@ -3,6 +3,7 @@
  * Usado por: Trabalho
  *
  * Registro de horas trabalhadas com suporte a múltiplos trabalhos/projetos.
+ * O valor/hora é CALCULADO automaticamente: totalEarnings / totalHoursWorked
  */
 
 export interface WorkTask {
@@ -11,8 +12,13 @@ export interface WorkTask {
   completed: boolean;
 }
 
-export interface WorkEarnings {
-  amount: number; // Valor ganho
+/**
+ * Registro de ganho único associado a um trabalho
+ */
+export interface Earning {
+  id: string;
+  amount: number; // Valor ganho em R$
+  date: string; // ISO 8601
   description?: string; // Descrição opcional
 }
 
@@ -24,7 +30,7 @@ export interface WorkEntry {
   duration: number; // em segundos
   jobId: string; // Referência ao trabalho
   tasks?: WorkTask[];
-  earnings?: WorkEarnings;
+  earningId?: string; // Referência a um earning, se aplicável
   notes?: string;
   createdAt: string;
   updatedAt: string;
@@ -32,26 +38,31 @@ export interface WorkEntry {
 
 /**
  * Configuração de trabalhos (armazenado separadamente no jobStore)
+ * O valor/hora NÃO é mais definido manualmente - é CALCULADO
  */
 export interface Job {
   id: string;
   name: string; // "Freelance", "Empresa X", "Projeto Y"
-  hourlyRate?: number; // Valor por hora (opcional)
   color: string; // Cor para diferenciar nos gráficos
   isActive: boolean; // Se ainda está ativo
+  earnings: Earning[]; // Lista de ganhos associados a este trabalho
   createdAt: string;
   updatedAt: string;
 }
 
 export interface CreateJobInput {
   name: string;
-  hourlyRate?: number;
   color: string;
 }
 
 export interface UpdateJobInput {
   name?: string;
-  hourlyRate?: number;
   color?: string;
   isActive?: boolean;
+}
+
+export interface AddEarningInput {
+  amount: number;
+  date: string;
+  description?: string;
 }

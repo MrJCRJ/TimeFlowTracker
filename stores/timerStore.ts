@@ -15,7 +15,7 @@ interface TimerStoreState {
 interface TimerStoreActions {
   // Timer controls
   startTimer: (categoryId: string, userId: string, taskId?: string, notes?: string) => TimeEntry;
-  stopTimer: (notes?: string) => TimeEntry | null;
+  stopTimer: (notes?: string, metadata?: TimeEntry['metadata']) => TimeEntry | null;
   updateElapsed: () => void;
   restoreActiveTimer: (entry: TimeEntry) => void; // Restaurar timer ativo da nuvem
 
@@ -80,7 +80,7 @@ export const useTimerStore = create<TimerStore>()(
         return newEntry;
       },
 
-      stopTimer: (notes?: string) => {
+      stopTimer: (notes?: string, metadata?: TimeEntry['metadata']) => {
         const { activeEntry } = get();
         if (!activeEntry) {
           return null;
@@ -92,6 +92,7 @@ export const useTimerStore = create<TimerStore>()(
           endTime,
           duration: diffInSeconds(activeEntry.startTime, endTime),
           notes: notes ?? activeEntry.notes,
+          metadata: metadata ?? activeEntry.metadata,
           updatedAt: endTime,
         };
 

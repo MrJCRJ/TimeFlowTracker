@@ -182,17 +182,72 @@ export function TimerBar({
   );
 
   const handleStopTimer = useCallback(() => {
-    // TODO: Salvar dados da entrada junto quando implementar persistência
-    stopTimer();
+    // Preparar metadata baseado no tipo da categoria
+    const metadata: TimeEntry['metadata'] = {};
+
+    if (activeCategory) {
+      switch (activeCategory.type) {
+        case 'simple':
+          if (checklistItems.length > 0) {
+            metadata.checklistItems = checklistItems.map((item) => ({
+              id: item.id,
+              text: item.text,
+              completed: item.completed,
+            }));
+          }
+          break;
+        case 'workout':
+          if (workoutExercises.length > 0) {
+            metadata.exercises = workoutExercises.map((ex) => ({
+              name: ex.name,
+              sets: ex.sets.filter((s) => s.completed).length,
+              reps: ex.sets[0]?.reps || 0,
+              weight: ex.sets[0]?.weight,
+            }));
+          }
+          break;
+        case 'work':
+          if (selectedJobId) {
+            metadata.jobId = selectedJobId;
+          }
+          break;
+        case 'meal':
+          if (selectedRecipeId) {
+            metadata.recipeId = selectedRecipeId;
+          }
+          break;
+        case 'commitment':
+          if (selectedCommitmentId) {
+            metadata.commitmentId = selectedCommitmentId;
+          }
+          break;
+      }
+    }
+
+    // Parar timer com metadata
+    stopTimer(undefined, Object.keys(metadata).length > 0 ? metadata : undefined);
+
+    // Reset UI state
     setShowTaskPanel(false);
     setShowEntryPanel(false);
-    setChecklistItems([]); // Reset checklist
-    setWorkoutExercises([]); // Reset exercícios
-    setMealAction(null); // Reset meal action
-    selectJob(null); // Reset trabalho selecionado
-    selectRecipe(null); // Reset receita selecionada
-    selectCommitment(null); // Reset compromisso selecionado
-  }, [stopTimer, selectJob, selectRecipe, selectCommitment]);
+    setChecklistItems([]);
+    setWorkoutExercises([]);
+    setMealAction(null);
+    selectJob(null);
+    selectRecipe(null);
+    selectCommitment(null);
+  }, [
+    stopTimer,
+    selectJob,
+    selectRecipe,
+    selectCommitment,
+    activeCategory,
+    checklistItems,
+    workoutExercises,
+    selectedJobId,
+    selectedRecipeId,
+    selectedCommitmentId,
+  ]);
 
   const handleToggleTask = useCallback(
     (taskId: string, isCompleted: boolean) => {

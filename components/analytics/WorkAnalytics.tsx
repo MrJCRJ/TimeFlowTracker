@@ -17,30 +17,38 @@ interface JobStats {
   jobId: string;
   jobName: string;
   jobColor: string;
-  hourlyRate: number;
   totalSeconds: number;
-  totalEarnings: number;
+  totalEarnings: number; // Ganhos registrados no período
+  calculatedHourlyRate: number | null; // Valor/hora calculado
   sessions: number;
 }
 
 /**
  * Componente de analytics para a categoria Trabalho
  * Mostra ganhos por job, tempo trabalhado e métricas financeiras
+ * O valor/hora é CALCULADO: totalEarnings / totalHoursWorked
  */
 export function WorkAnalytics({ filteredEntries, periodLabel, className }: WorkAnalyticsProps) {
-  const { getJobById } = useJobStore();
+  const { getJobById, getTotalEarnings, calculateHourlyRate } = useJobStore();
 
   // Filtrar apenas entradas de trabalho
   const workEntries = useMemo(() => {
     return filteredEntries.filter((entry) => entry.categoryId === 'work');
   }, [filteredEntries]);
 
+  // Extrair período (mês) das entradas filtradas
+  const periodMonth = useMemo(() => {
+    if (workEntries.length === 0) return new Date().toISOString().slice(0, 7);
+    // Usar a data da primeira entrada como referência do período
+    return workEntries[0].startTime.slice(0, 7); // "YYYY-MM"
+  }, [workEntries]);
+
   // Calcular estatísticas por job
   const jobStats = useMemo((): JobStats[] => {
     const statsMap = new Map<string, JobStats>();
 
     workEntries.forEach((entry) => {
-      // Tentar extrair jobId das notas ou metadados
+      // Extrair jobId do metadata
       const jobId = entry.metadata?.jobId || 'unknown';
       const job = getJobById(jobId);
 
@@ -49,9 +57,9 @@ export function WorkAnalytics({ filteredEntries, periodLabel, className }: WorkA
           jobId,
           jobName: job?.name || 'Trabalho Geral',
           jobColor: job?.color || '#3b82f6',
-          hourlyRate: job?.hourlyRate || 0,
           totalSeconds: 0,
           totalEarnings: 0,
+          calculatedHourlyRate: null,
           sessions: 0,
         });
       }
@@ -59,11 +67,18 @@ export function WorkAnalytics({ filteredEntries, periodLabel, className }: WorkA
       const stats = statsMap.get(jobId)!;
       stats.totalSeconds += entry.duration || 0;
       stats.sessions += 1;
-      stats.totalEarnings = (stats.totalSeconds / 3600) * stats.hourlyRate;
+    });
+
+    // Calcular ganhos e valor/hora para cada job
+    statsMap.forEach((stats, jobId) => {
+      if (jobId !== 'unknown') {
+        stats.totalEarnings = getTotalEarnings(jobId, periodMonth);
+        stats.calculatedHourlyRate = calculateHourlyRate(jobId, stats.totalSeconds, periodMonth);
+      }
     });
 
     return Array.from(statsMap.values()).sort((a, b) => b.totalEarnings - a.totalEarnings);
-  }, [workEntries, getJobById]);
+  }, [workEntries, getJobById, getTotalEarnings, calculateHourlyRate, periodMonth]);
 
   // Totais
   const totals = useMemo(() => {
@@ -139,8 +154,10 @@ export function WorkAnalytics({ filteredEntries, periodLabel, className }: WorkA
                     <div>
                       <p className="font-medium">{stats.jobName}</p>
                       <p className="text-xs text-muted-foreground">
-                        {stats.sessions} sessão{stats.sessions !== 1 ? 'ões' : ''} · R${' '}
-                        {stats.hourlyRate}/h
+                        {stats.sessions} sessão{stats.sessions !== 1 ? 'ões' : ''}
+                        {stats.calculatedHourlyRate !== null && (
+                          <> · R$ {stats.calculatedHourlyRate.toFixed(2)}/h</>
+                        )}
                       </p>
                     </div>
                   </div>
