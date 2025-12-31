@@ -5,3 +5,4 @@ export { Switch } from './switch';
 export { Label } from './label';
 export { LoadingState } from './loading-state';
 export { SyncIndicator } from './SyncIndicator';
+export { AutocompleteInput } from './AutocompleteInput';

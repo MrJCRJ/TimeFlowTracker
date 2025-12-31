@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { Plus, X, Check } from 'lucide-react';
 import type { ChecklistItem } from '@/types/entries/simple';
+import { AutocompleteInput } from '@/components/ui/AutocompleteInput';
+import { useAutocompleteStore } from '@/stores/autocompleteStore';
 
 interface ChecklistInputProps {
   items: ChecklistItem[];
@@ -24,14 +26,9 @@ export function ChecklistInput({
 }: ChecklistInputProps) {
   const [newItemText, setNewItemText] = useState('');
   const [isAdding, setIsAdding] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
 
-  // Focus no input quando abre
-  useEffect(() => {
-    if (isAdding && inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, [isAdding]);
+  // Autocomplete store
+  const { getTaskSuggestions, addTaskName } = useAutocompleteStore();
 
   const generateId = () => `item_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 
@@ -46,9 +43,13 @@ export function ChecklistInput({
     };
 
     onItemsChange([...items, newItem]);
+
+    // Salvar no histórico para autocomplete
+    addTaskName(text);
+
     setNewItemText('');
     setIsAdding(false);
-  }, [newItemText, items, maxItems, onItemsChange]);
+  }, [newItemText, items, maxItems, onItemsChange, addTaskName]);
 
   const handleToggleItem = useCallback(
     (itemId: string) => {
@@ -65,16 +66,6 @@ export function ChecklistInput({
     },
     [items, onItemsChange]
   );
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleAddItem();
-    } else if (e.key === 'Escape') {
-      setIsAdding(false);
-      setNewItemText('');
-    }
-  };
 
   const pendingItems = items.filter((item) => !item.completed);
   const completedItems = items.filter((item) => item.completed);
@@ -175,20 +166,14 @@ export function ChecklistInput({
       {/* Input para adicionar novo item */}
       {isAdding ? (
         <div className="flex items-center gap-2">
-          <input
-            ref={inputRef}
-            type="text"
+          <AutocompleteInput
             value={newItemText}
-            onChange={(e) => setNewItemText(e.target.value)}
-            onKeyDown={handleKeyDown}
+            onChange={setNewItemText}
+            onSubmit={handleAddItem}
+            suggestions={getTaskSuggestions(newItemText)}
             placeholder={placeholder}
-            className={cn(
-              'flex-1 rounded-md px-3 py-1.5 text-sm',
-              'border border-input bg-background',
-              'focus:outline-none focus:ring-2 focus:ring-primary/50',
-              compact && 'py-1'
-            )}
-            maxLength={100}
+            className="flex-1"
+            inputClassName={cn('py-1.5', compact && 'py-1')}
           />
           <button
             type="button"

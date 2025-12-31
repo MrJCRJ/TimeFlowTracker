@@ -14,6 +14,8 @@ import {
 } from 'lucide-react';
 import type { WorkoutExercise, WorkoutSet, MuscleGroup } from '@/types/entries/workout';
 import { MUSCLE_GROUP_LABELS } from '@/types/entries/workout';
+import { AutocompleteInput } from '@/components/ui/AutocompleteInput';
+import { useAutocompleteStore } from '@/stores/autocompleteStore';
 
 interface WorkoutEntryPanelProps {
   categoryColor: string;
@@ -43,6 +45,9 @@ export function WorkoutEntryPanel({
   const [newMuscleGroup, setNewMuscleGroup] = useState<MuscleGroup>('chest');
   const [expandedExercise, setExpandedExercise] = useState<string | null>(null);
 
+  // Autocomplete store
+  const { getExerciseSuggestions, addExerciseName } = useAutocompleteStore();
+
   const totalSets = exercises.reduce((acc, ex) => acc + ex.sets.length, 0);
   const completedSets = exercises.reduce(
     (acc, ex) => acc + ex.sets.filter((s) => s.completed).length,
@@ -53,19 +58,25 @@ export function WorkoutEntryPanel({
   const handleAddExercise = useCallback(() => {
     if (!newExerciseName.trim()) return;
 
+    const exerciseName = newExerciseName.trim();
+
     const newExercise: WorkoutExercise = {
       id: generateId(),
-      name: newExerciseName.trim(),
+      name: exerciseName,
       muscleGroup: newMuscleGroup,
       sets: [{ id: generateId(), reps: 12, weight: undefined, completed: false }],
     };
 
     onExercisesChange([...exercises, newExercise]);
+
+    // Salvar no histórico para autocomplete
+    addExerciseName(exerciseName);
+
     setNewExerciseName('');
     setNewMuscleGroup('chest');
     setIsAddingExercise(false);
     setExpandedExercise(newExercise.id);
-  }, [newExerciseName, newMuscleGroup, exercises, onExercisesChange]);
+  }, [newExerciseName, newMuscleGroup, exercises, onExercisesChange, addExerciseName]);
 
   // Remover exercício
   const handleRemoveExercise = useCallback(
@@ -338,21 +349,13 @@ export function WorkoutEntryPanel({
           {/* Adicionar exercício */}
           {isAddingExercise ? (
             <div className="mt-3 space-y-2 rounded-lg border border-border bg-muted/30 p-3">
-              <input
-                type="text"
+              <AutocompleteInput
                 value={newExerciseName}
-                onChange={(e) => setNewExerciseName(e.target.value)}
+                onChange={setNewExerciseName}
+                onSubmit={handleAddExercise}
+                suggestions={getExerciseSuggestions(newExerciseName)}
                 placeholder="Nome do exercício..."
-                className={cn(
-                  'w-full rounded-md px-3 py-2 text-sm',
-                  'border border-input bg-background',
-                  'focus:outline-none focus:ring-2 focus:ring-primary/50'
-                )}
-                autoFocus
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleAddExercise();
-                  if (e.key === 'Escape') setIsAddingExercise(false);
-                }}
+                inputClassName="py-2"
               />
               <select
                 value={newMuscleGroup}
