@@ -30,15 +30,12 @@ export function ChecklistInput({
   const [isAdding, setIsAdding] = useState(false);
 
   // Autocomplete store
-  const {
-    getTaskSuggestions,
-    addTaskName,
-    getActivitySuggestions,
-    addActivityName,
-  } = useAutocompleteStore();
+  const { getTaskSuggestions, addTaskName, getActivitySuggestions, addActivityName } =
+    useAutocompleteStore();
 
   // Selecionar funções baseado no tipo
-  const getSuggestions = autocompleteType === 'activity' ? getActivitySuggestions : getTaskSuggestions;
+  const getSuggestions =
+    autocompleteType === 'activity' ? getActivitySuggestions : getTaskSuggestions;
   const addToHistory = autocompleteType === 'activity' ? addActivityName : addTaskName;
 
   const generateId = () => `item_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
