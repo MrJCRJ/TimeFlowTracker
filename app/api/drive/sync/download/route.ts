@@ -89,11 +89,26 @@ export async function GET(): Promise<NextResponse<ApiResponse>> {
       console.warn('Erro ao buscar metadata de sync:', error);
     }
 
+    // Extrair dados extras das preferências (se existirem)
+    const extendedPreferences = preferences as {
+      jobs?: unknown[];
+      recipes?: unknown[];
+      commitments?: unknown[];
+      tasks?: unknown[];
+      autocomplete?: { exerciseNames: string[]; taskNames: string[] };
+      updatedAt?: string;
+    } | null;
+
     return NextResponse.json({
       success: true,
       data: {
         categories: categories || [],
         timeEntries: timeEntries || [],
+        jobs: extendedPreferences?.jobs || [],
+        recipes: extendedPreferences?.recipes || [],
+        commitments: extendedPreferences?.commitments || [],
+        tasks: extendedPreferences?.tasks || [],
+        autocomplete: extendedPreferences?.autocomplete || { exerciseNames: [], taskNames: [] },
         updatedAt: syncTimestamp || preferences?.updatedAt || new Date().toISOString(),
       },
       timestamp: new Date().toISOString(),

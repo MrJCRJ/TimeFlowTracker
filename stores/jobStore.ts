@@ -34,6 +34,7 @@ interface JobStoreActions {
   addJob: (input: CreateJobInput) => Job;
   updateJob: (id: string, updates: UpdateJobInput) => void;
   deleteJob: (id: string) => void;
+  setJobs: (jobs: Job[]) => void; // Para restauração de dados
 
   // CRUD de Earnings (Ganhos)
   addEarning: (jobId: string, input: AddEarningInput) => Earning | null;
@@ -212,6 +213,10 @@ export const useJobStore = create<JobStore>()(
 
       reset: () => {
         set(initialState);
+      },
+
+      setJobs: (jobs: Job[]) => {
+        set({ jobs });
       },
     }),
     {

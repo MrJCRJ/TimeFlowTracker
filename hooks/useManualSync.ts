@@ -4,13 +4,39 @@ import { useCallback, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useTimerStore } from '@/stores/timerStore';
 import { useNotificationStore } from '@/stores/notificationStore';
+import { useJobStore } from '@/stores/jobStore';
+import { useRecipeStore } from '@/stores/recipeStore';
+import { useCommitmentStore } from '@/stores/commitmentStore';
+import { useTaskStore } from '@/stores/taskStore';
+import { useAutocompleteStore } from '@/stores/autocompleteStore';
 import type { TimeEntry } from '@/types';
+
+/**
+ * Interface para todos os dados sincronizáveis
+ */
+interface SyncData {
+  timeEntries: TimeEntry[];
+  jobs: unknown[];
+  recipes: unknown[];
+  commitments: unknown[];
+  tasks: unknown[];
+  autocomplete: {
+    exerciseNames: string[];
+    taskNames: string[];
+  };
+}
 
 /**
  * Hook para sincronização MANUAL com Google Drive
  * Permite fazer backup e restaurar dados manualmente
  *
- * Nota: Categorias são fixas, apenas timeEntries são sincronizados.
+ * Sincroniza todos os stores:
+ * - timeEntries (registros de tempo)
+ * - jobs (trabalhos e ganhos)
+ * - recipes (receitas)
+ * - commitments (compromissos)
+ * - tasks (tarefas)
+ * - autocomplete (histórico de autocomplete)
  */
 export function useManualSync() {
   const { data: session } = useSession();
@@ -20,9 +46,47 @@ export function useManualSync() {
   const [isBackingUp, setIsBackingUp] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
 
-  // Stores
+  // Timer Store
   const timeEntries = useTimerStore((s) => s.timeEntries);
   const setTimeEntries = useTimerStore((s) => s.setTimeEntries);
+
+  // Job Store
+  const jobs = useJobStore((s) => s.jobs);
+  const setJobs = useJobStore((s) => s.setJobs);
+
+  // Recipe Store
+  const recipes = useRecipeStore((s) => s.recipes);
+  const setRecipes = useRecipeStore((s) => s.setRecipes);
+
+  // Commitment Store
+  const commitments = useCommitmentStore((s) => s.commitments);
+  const setCommitments = useCommitmentStore((s) => s.setCommitments);
+
+  // Task Store
+  const tasks = useTaskStore((s) => s.tasks);
+  const setTasks = useTaskStore((s) => s.setTasks);
+
+  // Autocomplete Store
+  const exerciseNames = useAutocompleteStore((s) => s.exerciseNames);
+  const taskNames = useAutocompleteStore((s) => s.taskNames);
+  const setAutocomplete = useAutocompleteStore((s) => s.setAutocomplete);
+
+  /**
+   * Coleta todos os dados locais para backup
+   */
+  const getLocalData = useCallback((): SyncData => {
+    return {
+      timeEntries,
+      jobs,
+      recipes,
+      commitments,
+      tasks,
+      autocomplete: {
+        exerciseNames,
+        taskNames,
+      },
+    };
+  }, [timeEntries, jobs, recipes, commitments, tasks, exerciseNames, taskNames]);
 
   /**
    * Faz backup manual dos dados locais para o Drive
@@ -40,13 +104,20 @@ export function useManualSync() {
     setIsBackingUp(true);
 
     try {
+      const localData = getLocalData();
+
       const response = await fetch('/api/drive/sync/upload', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          timeEntries,
+          timeEntries: localData.timeEntries,
+          jobs: localData.jobs,
+          recipes: localData.recipes,
+          commitments: localData.commitments,
+          tasks: localData.tasks,
+          autocomplete: localData.autocomplete,
           updatedAt: new Date().toISOString(),
         }),
       });
@@ -58,7 +129,7 @@ export function useManualSync() {
       addNotification({
         type: 'success',
         title: 'Backup Concluído',
-        message: 'Seus dados foram salvos no Google Drive',
+        message: 'Todos os seus dados foram salvos no Google Drive',
       });
       return true;
     } catch (error) {
@@ -71,7 +142,7 @@ export function useManualSync() {
     } finally {
       setIsBackingUp(false);
     }
-  }, [session?.accessToken, timeEntries, addNotification]);
+  }, [session?.accessToken, getLocalData, addNotification]);
 
   /**
    * Restaura dados do Drive (sobrescreve dados locais)
@@ -88,7 +159,7 @@ export function useManualSync() {
 
     // Confirmação antes de sobrescrever
     const confirmRestore = window.confirm(
-      'ATENÇÃO: Isso irá sobrescrever todos os seus registros de tempo locais com os dados do Google Drive. Deseja continuar?'
+      'ATENÇÃO: Isso irá sobrescrever TODOS os seus dados locais com os dados do Google Drive. Deseja continuar?'
     );
 
     if (!confirmRestore) {
@@ -107,15 +178,35 @@ export function useManualSync() {
       const result = await response.json();
 
       if (result.success && result.data) {
-        // Atualizar store com dados do Drive (apenas timeEntries, categorias são fixas)
-        if (result.data.timeEntries && result.data.timeEntries.length > 0) {
+        // Restaurar todos os dados
+        if (result.data.timeEntries?.length > 0) {
           setTimeEntries(result.data.timeEntries as TimeEntry[]);
+        }
+
+        if (result.data.jobs?.length > 0) {
+          setJobs(result.data.jobs);
+        }
+
+        if (result.data.recipes?.length > 0) {
+          setRecipes(result.data.recipes);
+        }
+
+        if (result.data.commitments?.length > 0) {
+          setCommitments(result.data.commitments);
+        }
+
+        if (result.data.tasks?.length > 0) {
+          setTasks(result.data.tasks);
+        }
+
+        if (result.data.autocomplete) {
+          setAutocomplete(result.data.autocomplete);
         }
 
         addNotification({
           type: 'success',
           title: 'Restauração Concluída',
-          message: 'Dados restaurados do Google Drive',
+          message: 'Todos os dados restaurados do Google Drive',
         });
         return true;
       } else {
@@ -136,7 +227,16 @@ export function useManualSync() {
     } finally {
       setIsRestoring(false);
     }
-  }, [session?.accessToken, setTimeEntries, addNotification]);
+  }, [
+    session?.accessToken,
+    setTimeEntries,
+    setJobs,
+    setRecipes,
+    setCommitments,
+    setTasks,
+    setAutocomplete,
+    addNotification,
+  ]);
 
   return {
     backupToDrive,

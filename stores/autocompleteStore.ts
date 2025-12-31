@@ -16,6 +16,7 @@ interface AutocompleteHistoryActions {
   addTaskName: (name: string) => void;
   getExerciseSuggestions: (query: string) => string[];
   getTaskSuggestions: (query: string) => string[];
+  setAutocomplete: (data: { exerciseNames: string[]; taskNames: string[] }) => void; // Para restauração
   reset: () => void;
 }
 
@@ -79,6 +80,13 @@ export const useAutocompleteStore = create<AutocompleteHistoryStore>()(
 
       reset: () => {
         set(initialState);
+      },
+
+      setAutocomplete: (data: { exerciseNames: string[]; taskNames: string[] }) => {
+        set({
+          exerciseNames: data.exerciseNames || [],
+          taskNames: data.taskNames || [],
+        });
       },
     }),
     {

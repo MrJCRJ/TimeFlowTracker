@@ -53,6 +53,7 @@ interface CommitmentStoreActions {
   addCommitment: (input: CreateCommitmentInput) => Commitment;
   updateCommitment: (id: string, updates: UpdateCommitmentInput) => void;
   deleteCommitment: (id: string) => void;
+  setCommitments: (commitments: Commitment[]) => void; // Para restauração de dados
 
   // Seleção para timer
   selectCommitment: (commitmentId: string | null) => void;
@@ -310,6 +311,10 @@ export const useCommitmentStore = create<CommitmentStore>()(
 
       reset: () => {
         set(initialState);
+      },
+
+      setCommitments: (commitments: Commitment[]) => {
+        set({ commitments });
       },
     }),
     {

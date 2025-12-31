@@ -8,6 +8,7 @@ export const dynamic = 'force-dynamic';
 /**
  * POST /api/drive/sync/upload
  * Envia dados locais para o Drive (sobrescreve Drive)
+ * Sincroniza: timeEntries, jobs, recipes, commitments, tasks, autocomplete
  */
 export async function POST(request: NextRequest): Promise<NextResponse<ApiResponse>> {
   try {
@@ -37,15 +38,17 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
     }
 
     const body = await request.json();
-    const { categories, timeEntries, updatedAt } = body;
+    const { categories, timeEntries, jobs, recipes, commitments, tasks, autocomplete, updatedAt } =
+      body;
 
-    if (!Array.isArray(categories) || !Array.isArray(timeEntries)) {
+    // Validação básica - timeEntries é obrigatório
+    if (timeEntries && !Array.isArray(timeEntries)) {
       return NextResponse.json(
         {
           success: false,
           error: {
             code: 'VALIDATION_ERROR',
-            message: 'Dados inválidos: categories e timeEntries devem ser arrays',
+            message: 'Dados inválidos: timeEntries deve ser um array',
           },
           timestamp: new Date().toISOString(),
         },
@@ -55,18 +58,30 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
 
     const driveService = createDriveService(accessToken);
 
-    // Criar preferências com o timestamp de atualização
-    const preferences: UserPreferences = {
+    // Criar preferências com o timestamp de atualização e dados extras
+    const preferences: UserPreferences & {
+      jobs?: unknown[];
+      recipes?: unknown[];
+      commitments?: unknown[];
+      tasks?: unknown[];
+      autocomplete?: { exerciseNames: string[]; taskNames: string[] };
+    } = {
       userId: session.user.id,
       workHours: { start: '09:00', end: '18:00' },
       dailyGoals: {},
       theme: 'system',
       notifications: true,
       updatedAt: updatedAt || new Date().toISOString(),
+      // Dados extras para sincronização
+      jobs: jobs || [],
+      recipes: recipes || [],
+      commitments: commitments || [],
+      tasks: tasks || [],
+      autocomplete: autocomplete || { exerciseNames: [], taskNames: [] },
     };
 
     // Salvar todos os dados de uma vez
-    const result = await driveService.syncAll(categories, timeEntries, preferences);
+    const result = await driveService.syncAll(categories || [], timeEntries || [], preferences);
 
     return NextResponse.json({
       success: true,

@@ -15,6 +15,7 @@ interface RecipeStoreActions {
   addRecipe: (input: CreateRecipeInput) => Recipe;
   updateRecipe: (id: string, updates: UpdateRecipeInput) => void;
   deleteRecipe: (id: string) => void;
+  setRecipes: (recipes: Recipe[]) => void; // Para restauração de dados
 
   // Seleção
   selectRecipe: (recipeId: string | null) => void;
@@ -127,6 +128,10 @@ export const useRecipeStore = create<RecipeStore>()(
 
       reset: () => {
         set(initialState);
+      },
+
+      setRecipes: (recipes: Recipe[]) => {
+        set({ recipes });
       },
     }),
     {

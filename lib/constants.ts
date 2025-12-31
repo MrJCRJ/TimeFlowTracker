@@ -24,6 +24,12 @@ export const DRIVE_FILES = {
   TIME_ENTRIES: 'time_entries.json',
   PREFERENCES: 'preferences.json',
   SYNC_METADATA: 'sync-metadata.json',
+  // Novos arquivos para dados especializados
+  JOBS: 'jobs.json',
+  RECIPES: 'recipes.json',
+  COMMITMENTS: 'commitments.json',
+  TASKS: 'tasks.json',
+  AUTOCOMPLETE: 'autocomplete.json',
 } as const;
 
 // API Routes
